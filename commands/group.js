@@ -714,7 +714,7 @@ cmd(
     try {
       await conn.sendMessage(from, {
         pin: {
-          type: 1,         // 1 = pin, 0 = unpin
+          type: 1,         // 1 = pin, 2 = unpin
           time: timeInSeconds,
           key: quotedKey
         }
@@ -760,7 +760,7 @@ cmd(
     try {
       await conn.sendMessage(from, {
         pin: {
-          type: 0,   // 0 = remove/unpin
+          type: 2,   // 2 = unpin
           time: 0,
           key: quotedKey
         }
@@ -1009,6 +1009,65 @@ cmd(
 
     global.kickallCancelled[from] = true;
     await reply("🛑 Cancelling kickall...");
+  }
+);
+
+// ------------------ poll ------------------
+cmd(
+  {
+    pattern: "poll",
+    category: "group",
+    react: "📊",
+    desc: "Create a poll. Usage: .poll <question> | <option1, option2, ...> [selectableCount]",
+    usage: '.poll "Favorite color?" "Red, Blue, Green"',
+    noPrefix: false
+  },
+  async (conn, mek, m, { isGroup, isAdmin, isBotAdmin, from, reply, q }) => {
+    if (!requireGroup(isGroup, reply)) return;
+    if (!requireAdmin(isAdmin, reply)) return;
+    if (!requireBotAdmin(isBotAdmin, reply)) return;
+
+    if (!q || !q.includes("|")) {
+      return reply(
+        "⚠️ *Usage:*\n`.poll <question> | <option1, option2, ...>`\n\n*Example:*\n`.poll Favorite color? | Red, Blue, Green`"
+      );
+    }
+
+    const parts = q.split("|").map((p) => p.trim());
+    const name = parts[0];
+    const valuesPart = parts[1] || "";
+    const values = valuesPart
+      .split(",")
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+
+    if (!name || values.length < 2) {
+      return reply("⚠️ Provide a question and at least 2 options separated by commas.");
+    }
+
+    if (values.length > 12) {
+      return reply("⚠️ Maximum 12 options allowed.");
+    }
+
+    // Optional selectable count (default 1)
+    let selectableCount = 1;
+    if (parts[2]) {
+      const parsed = parseInt(parts[2]);
+      if (!isNaN(parsed) && parsed > 0) selectableCount = Math.min(parsed, values.length);
+    }
+
+    try {
+      await conn.sendMessage(from, {
+        poll: {
+          name,
+          values,
+          selectableCount
+        }
+      });
+    } catch (err) {
+      console.error("Poll error:", err);
+      await reply("❌ Failed to create poll.");
+    }
   }
 );
 
