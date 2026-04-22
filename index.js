@@ -22,8 +22,8 @@ const BOT_START_TIME = Math.floor(Date.now() / 1000);
 
 async function startBot() {
   const baileys = await import("gifted-baileys");
-  const makeWASocket = baileys.default;
   const {
+    makeWASocket,
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
     DisconnectReason,
