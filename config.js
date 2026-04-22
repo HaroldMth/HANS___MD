@@ -2,7 +2,7 @@ module.exports = {
   BOT_NAME: "HANS MD",
   BOT_VERSION: "1.0.0",
   OWNER_NAME: "Harold",
-  OWNER_NUMBER: ["237696900612"],
+  OWNER_NUMBER: ["237696900612", "121655384866868"],
   PREFIX: ["."],
   AUTO_REACT: true,    // set false to disable auto emoji reactions
   ANTI_DELETE: true,   // set false to disable recovering deleted messages
