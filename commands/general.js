@@ -219,6 +219,15 @@ cmd(
       `  [${i}] id=${p.id || "-"} | lid=${p.lid || "-"} | pn=${p.phoneNumber || "-"}`
     );
 
+    // conn.user debug for LID diagnosis
+    const botUser = conn.user || {};
+    const botUserKeys = Object.keys(botUser);
+    const hasSignalRepo = !!conn.signalRepository;
+    const hasLidMapping = hasSignalRepo && !!conn.signalRepository.lidMapping;
+    const lidMapMethods = hasLidMapping
+      ? Object.keys(conn.signalRepository.lidMapping).filter((k) => typeof conn.signalRepository.lidMapping[k] === "function")
+      : [];
+
     // Server-side log
     console.log("[TESTINFO]", JSON.stringify({
       from,
@@ -230,6 +239,16 @@ cmd(
       isGroup,
       isAdmin,
       isBotAdmin,
+      botUser: {
+        id: botUser.id,
+        lid: botUser.lid,
+        phoneNumber: botUser.phoneNumber,
+        name: botUser.name,
+        keys: botUserKeys
+      },
+      hasSignalRepo,
+      hasLidMapping,
+      lidMapMethods,
       adminParticipants: adminParts.map((p) => ({ id: p.id, lid: p.lid, phoneNumber: p.phoneNumber, admin: p.admin }))
     }, null, 2));
 
@@ -253,7 +272,15 @@ cmd(
       `• isSudo: ${Boolean(isSudo)}`,
       `• isDev: ${Boolean(isDev)}`,
       `• isAdmin: ${Boolean(isAdmin)}`,
-      `• isBotAdmin: ${Boolean(isBotAdmin)}`
+      `• isBotAdmin: ${Boolean(isBotAdmin)}`,
+      ``,
+      `*Bot user:*`,
+      `  id: ${botUser.id || "-"}`,
+      `  lid: ${botUser.lid || "-"}`,
+      `  pn: ${botUser.phoneNumber || "-"}`,
+      `  keys: ${botUserKeys.slice(0, 8).join(",")}${botUserKeys.length > 8 ? "..." : ""}`,
+      ``,
+      `*SignalRepo:* ${hasSignalRepo} | *LidMap:* ${hasLidMapping} | *Methods:* ${lidMapMethods.join(",") || "none"}`
     ];
 
     if (isGroup) {
