@@ -1091,14 +1091,8 @@ cmd(
     const hasGiftedBaileys = !!conn.giftedStatus || !!conn.sendGroupStatus;
     if (!hasGiftedBaileys) {
       return reply(
-        "⚠️ *Group Status Not Available*\n\n" +
-        "This feature requires *gifted-baileys* package.\n\n" +
-        "*To enable it, run:*\n" +
-        "```bash\n" +
-        "npm uninstall @whiskeysockets/baileys\n" +
-        "npm install gifted-baileys\n" +
-        "```\n\n" +
-        "Then update your imports from `@whiskeysockets/baileys` to `gifted-baileys`."
+        "⚠️ *Group Status Error*\n\n" +
+        "The gifted-baileys package is required for group status messages."
       );
     }
 
