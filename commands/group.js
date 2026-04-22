@@ -1071,5 +1071,145 @@ cmd(
   }
 );
 
+// ------------------ gstatus (group status/story) ------------------
+cmd(
+  {
+    pattern: "gstatus",
+    alias: ["groupstatus", "gstory"],
+    category: "group",
+    react: "📸",
+    desc: "Send a status/story to the group. Reply to media or use URL. Types: image, video, text, audio",
+    usage: ".gstatus image <url> [caption] | .gstatus text <message> | reply to media + .gstatus <type>",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isGroup, isAdmin, isBotAdmin, from, reply, q, args, quoted }) => {
+    if (!requireGroup(isGroup, reply)) return;
+    if (!requireAdmin(isAdmin, reply)) return;
+    if (!requireBotAdmin(isBotAdmin, reply)) return;
+
+    if (!q) {
+      return reply(
+        "📸 *Group Status Sender*\n\n" +
+        "*Usage:*\n" +
+        "`.gstatus image <url> [caption]`\n" +
+        "`.gstatus video <url> [caption]`\n" +
+        "`.gstatus text <message>`\n" +
+        "`.gstatus audio <url>`\n\n" +
+        "*Or reply to media:*\n" +
+        "`.gstatus image` (reply to image)\n" +
+        "`.gstatus video` (reply to video)\n" +
+        "`.gstatus audio` (reply to audio/voice)"
+      );
+    }
+
+    const type = (args[0] || "").toLowerCase();
+    const validTypes = ["image", "video", "text", "audio"];
+
+    if (!validTypes.includes(type)) {
+      return reply("⚠️ Invalid type. Use: image, video, text, audio");
+    }
+
+    try {
+      let payload = {};
+
+      if (type === "text") {
+        const text = args.slice(1).join(" ").trim();
+        if (!text) return reply("⚠️ Provide text content.\nUsage: `.gstatus text Hello world!`");
+        payload = {
+          groupStatusMessage: {
+            text: text,
+            backgroundColor: "#FF5733",
+            font: 1
+          }
+        };
+      }
+
+      else if (type === "image") {
+        let imageUrl = null;
+        let caption = "";
+
+        // Check if quoted message is an image
+        if (quoted && quoted.type === "imageMessage") {
+          const buffer = await quoted.download();
+          if (!buffer) return reply("❌ Failed to download quoted image.");
+          payload = {
+            groupStatusMessage: {
+              image: buffer,
+              caption: args.slice(1).join(" ").trim()
+            }
+          };
+        } else {
+          imageUrl = args[1];
+          caption = args.slice(2).join(" ").trim();
+          if (!imageUrl) return reply("⚠️ Provide image URL or reply to an image.\nUsage: `.gstatus image <url> [caption]`");
+          payload = {
+            groupStatusMessage: {
+              image: { url: imageUrl },
+              caption
+            }
+          };
+        }
+      }
+
+      else if (type === "video") {
+        let videoUrl = null;
+        let caption = "";
+
+        if (quoted && quoted.type === "videoMessage") {
+          const buffer = await quoted.download();
+          if (!buffer) return reply("❌ Failed to download quoted video.");
+          payload = {
+            groupStatusMessage: {
+              video: buffer,
+              caption: args.slice(1).join(" ").trim()
+            }
+          };
+        } else {
+          videoUrl = args[1];
+          caption = args.slice(2).join(" ").trim();
+          if (!videoUrl) return reply("⚠️ Provide video URL or reply to a video.\nUsage: `.gstatus video <url> [caption]`");
+          payload = {
+            groupStatusMessage: {
+              video: { url: videoUrl },
+              caption
+            }
+          };
+        }
+      }
+
+      else if (type === "audio") {
+        if (quoted && (quoted.type === "audioMessage" || quoted.type === "pttMessage")) {
+          const buffer = await quoted.download();
+          if (!buffer) return reply("❌ Failed to download quoted audio.");
+          payload = {
+            groupStatusMessage: {
+              audio: buffer,
+              mimetype: "audio/mp4",
+              ptt: true
+            }
+          };
+        } else {
+          const audioUrl = args[1];
+          if (!audioUrl) return reply("⚠️ Provide audio URL or reply to an audio/voice message.\nUsage: `.gstatus audio <url>`");
+          payload = {
+            groupStatusMessage: {
+              audio: { url: audioUrl },
+              mimetype: "audio/mp4",
+              ptt: true
+            }
+          };
+        }
+      }
+
+      await conn.sendMessage(from, payload);
+      await reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} group status sent!`);
+
+    } catch (err) {
+      console.error("Gstatus error:", err);
+      await reply(`❌ Failed to send ${type} group status.\n\n*Error:* ${err.message || err}`);
+    }
+  }
+);
+
 module.exports = {};
 
