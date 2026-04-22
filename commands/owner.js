@@ -1,5 +1,7 @@
 const { cmd } = require("../command");
 const { getDB, saveGlobal } = require("../lib/database");
+const { exec } = require("child_process");
+const util = require("util");
 
 function requireSudoOrOwner(isSudo, reply) {
   if (isSudo) return true;
@@ -337,6 +339,161 @@ cmd(
     } catch (err) {
       console.error("Leave error:", err);
       await reply("❌ Failed to leave the group.");
+    }
+  }
+);
+
+// 📴 Shutdown/Stop
+cmd(
+  {
+    pattern: "shutdown",
+    alias: ["stop"],
+    category: "owner",
+    react: "🛑",
+    desc: "Shutdown the bot (Owner only)",
+    usage: ".shutdown",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isOwner, reply }) => {
+    if (!isOwner) return reply("❌ Owner only.");
+    await reply("🛑 Shutting down...");
+    setTimeout(() => {
+      console.log("Shutdown command triggered by owner.");
+      process.exit(0);
+    }, 1000);
+  }
+);
+
+// 📢 Broadcast
+cmd(
+  {
+    pattern: "broadcast",
+    alias: ["bc"],
+    category: "owner",
+    react: "📢",
+    desc: "Broadcast a message to all chats",
+    usage: ".broadcast <message>",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isOwner, args, reply, q }) => {
+    if (!isOwner) return reply("❌ Owner only.");
+    const text = q || args?.join(" ");
+    if (!text) return reply("❌ Provide a message to broadcast.");
+
+    const chats = Object.keys(conn.chats || {});
+    if (!chats.length) return reply("❌ No chats found.");
+
+    let sent = 0;
+    for (const jid of chats) {
+      try {
+        await conn.sendMessage(jid, { text: `📢 *Broadcast*\n\n${text}` });
+        sent++;
+      } catch (e) {
+        console.error("Broadcast failed for", jid, e.message);
+      }
+    }
+    await reply(`✅ Broadcast sent to ${sent} chat(s).`);
+  }
+);
+
+// 💬 Set About/Status
+cmd(
+  {
+    pattern: "setabout",
+    alias: ["status"],
+    category: "owner",
+    react: "💬",
+    desc: "Update bot about/status",
+    usage: ".setabout <text>",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isOwner, args, reply, q }) => {
+    if (!isOwner) return reply("❌ Owner only.");
+    const statusMsg = q || args?.join(" ");
+    if (!statusMsg) return reply("❌ Provide a status message.");
+    try {
+      await conn.updateProfileStatus(statusMsg);
+      await reply("✅ About updated!");
+    } catch (err) {
+      console.error("Setabout error:", err);
+      await reply("❌ Failed to update about.");
+    }
+  }
+);
+
+// 📂 List Groups
+cmd(
+  {
+    pattern: "groups",
+    alias: [],
+    category: "owner",
+    react: "📂",
+    desc: "List all groups the bot is in",
+    usage: ".groups",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isOwner, reply }) => {
+    if (!isOwner) return reply("❌ Owner only.");
+
+    let groups = [];
+    if (conn.store?.chats) {
+      groups = Array.from(conn.store.chats.values()).filter((c) => c.id?.endsWith("@g.us"));
+    } else if (conn.chats) {
+      groups = Object.values(conn.chats).filter((c) => c.id?.endsWith("@g.us"));
+    }
+
+    if (!groups.length) return reply("❌ No groups found.");
+
+    let txt = "📂 *Groups List:*\n\n";
+    groups.forEach((g, i) => {
+      txt += `${i + 1}. ${g.name || "Unnamed"}\n${g.id}\n\n`;
+    });
+    await reply(txt.trim());
+  }
+);
+
+// ⚙️ Exec (Shell Command)
+cmd(
+  {
+    pattern: "exec",
+    category: "owner",
+    react: "⚙️",
+    desc: "Run a shell command",
+    usage: ".exec <command>",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isOwner, args, reply, q }) => {
+    if (!isOwner) return reply("❌ Owner only.");
+    const command = q || args?.join(" ");
+    if (!command) return reply("❌ Provide a shell command.");
+    exec(command, (err, stdout, stderr) => {
+      if (err) return reply(`❌ *Error:*\n\n${err.message}`);
+      const output = stdout || stderr || "✅ Command executed.";
+      reply(util.format(output));
+    });
+  }
+);
+
+// 📜 Eval (JS Code)
+cmd(
+  {
+    pattern: "eval",
+    category: "owner",
+    react: "📜",
+    desc: "Run JavaScript code",
+    usage: ".eval <code>",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isOwner, args, reply, q }) => {
+    if (!isOwner) return reply("❌ Owner only.");
+    const code = q || args?.join(" ");
+    if (!code) return reply("❌ Provide JS code to evaluate.");
+    try {
+      // Create a safe-ish eval context
+      const result = await eval(`(async () => { ${code} })()`);
+      reply(util.format(result));
+    } catch (err) {
+      reply(`❌ *Error:*\n\n${err}`);
     }
   }
 );

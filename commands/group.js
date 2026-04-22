@@ -663,15 +663,67 @@ cmd(
 );
 
 cmd(
-{
-pattern: "pin",
-category: "group",
-react: "",
-desc: "Pin a replied message with duration",
+  {
+    pattern: "pin",
+    category: "group",
+    react: "📌",
+    desc: "Pin a replied message with duration",
+    usage: ".pin 24h|7d|30d (reply to a message)",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isGroup, isAdmin, isBotAdmin, from, quoted, reply, args }) => {
+    if (!requireGroup(isGroup, reply)) return;
+    if (!requireAdmin(isAdmin, reply)) return;
+    if (!requireBotAdmin(isBotAdmin, reply)) return;
 
     // Must be a reply
     if (!quoted) {
       return reply("❗ Reply to a message to pin it.\nUsage: .pin 24h|7d|30d");
+    }
+
+    // Get duration from args
+    const duration = (args[0] || "").toLowerCase();
+
+    if (!duration) {
+      return reply("⚠️ Specify duration.\nUsage: .pin 24h|7d|30d");
+    }
+
+    const durationMap = {
+      "24h": 86400,
+      "7d": 604800,
+      "30d": 2592000
+    };
+
+    const timeInSeconds = durationMap[duration];
+    if (!timeInSeconds) {
+      return reply("⚠️ Invalid duration. Use: 24h, 7d, or 30d");
+    }
+
+    // Safely reconstruct key
+    const quotedKey = {
+      remoteJid: from,
+      fromMe: quoted.key?.fromMe ?? false,
+      id: quoted.key?.id || quoted.id,
+      ...(quoted.key?.participant ? { participant: quoted.key.participant } : {})
+    };
+
+    if (!quotedKey.id) {
+      return reply("❗ Couldn't read message key. Try again.");
+    }
+
+    try {
+      await conn.sendMessage(from, {
+        pin: {
+          type: 1,         // 1 = pin, 0 = unpin
+          time: timeInSeconds,
+          key: quotedKey
+        }
+      });
+
+      await reply(`✅ Message pinned for ${duration.toUpperCase()}!`);
+    } catch (err) {
+      console.error("Pin error:", err);
+      await reply("⚠️ Failed to pin message. Make sure I have admin rights and message still exists.");
     }
   }
 );
@@ -680,30 +732,44 @@ cmd(
   {
     pattern: "unpin",
     category: "group",
-    react: "ð",
-    desc: "Unpin the current chat",
-    usage: ".unpin",
+    react: "📌",
+    desc: "Unpin a replied message",
+    usage: ".unpin (reply to pinned message)",
     noPrefix: false
   },
   async (conn, mek, m, { isGroup, isAdmin, isBotAdmin, from, quoted, reply }) => {
     if (!requireGroup(isGroup, reply)) return;
     if (!requireAdmin(isAdmin, reply)) return;
     if (!requireBotAdmin(isBotAdmin, reply)) return;
-    
+
+    if (!quoted) {
+      return reply("❗ Reply to a pinned message to unpin it.");
+    }
+
+    const quotedKey = {
+      remoteJid: from,
+      fromMe: quoted.key?.fromMe ?? false,
+      id: quoted.key?.id || quoted.id,
+      ...(quoted.key?.participant ? { participant: quoted.key.participant } : {})
+    };
+
+    if (!quotedKey.id) {
+      return reply("❗ Couldn't read message key. Try again.");
+    }
+
     try {
-      await conn.sendMessage(
-        from,
-        {
-          pin: {
-            type: 2 // 2 to unpin
-          }
+      await conn.sendMessage(from, {
+        pin: {
+          type: 0,   // 0 = remove/unpin
+          time: 0,
+          key: quotedKey
         }
-      );
-      
-      await reply("â Chat unpinned!");
+      });
+
+      await reply("✅ Message unpinned!");
     } catch (err) {
       console.error("Unpin error:", err);
-      await reply("âï¸ Failed to unpin chat. Make sure I have admin rights.");
+      await reply("⚠️ Failed to unpin message.");
     }
   }
 );
@@ -750,6 +816,199 @@ cmd(
       console.error("Pin chat error:", err);
       await reply("âï¸ Failed to pin chat. Make sure I have admin rights.");
     }
+  }
+);
+
+// ------------------ admins ------------------
+cmd(
+  {
+    pattern: "admins",
+    category: "group",
+    react: "👑",
+    desc: "Display a list of all group admins",
+    usage: ".admins",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isGroup, isAdmin, from, reply }) => {
+    if (!requireGroup(isGroup, reply)) return;
+    if (!requireAdmin(isAdmin, reply)) return;
+
+    try {
+      const metadata = await conn.groupMetadata(from);
+      const admins = metadata.participants.filter((p) => p.admin).map((p) => p.id);
+      if (!admins.length) return reply("❌ No admins found.");
+
+      const list = admins.map((a) => `👑 @${jidToNumber(a)}`).join("\n");
+      await reply(`👑 *Group Admins:*\n\n${list}`, { mentions: admins });
+    } catch (err) {
+      console.error("Admins error:", err);
+      await reply("❌ Failed to fetch admins.");
+    }
+  }
+);
+
+// ------------------ tagadmins ------------------
+cmd(
+  {
+    pattern: "tagadmins",
+    category: "group",
+    react: "👑",
+    desc: "Ping all admins",
+    usage: ".tagadmins",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isGroup, isAdmin, from, reply }) => {
+    if (!requireGroup(isGroup, reply)) return;
+    if (!requireAdmin(isAdmin, reply)) return;
+
+    try {
+      const metadata = await conn.groupMetadata(from);
+      const admins = metadata.participants.filter((p) => p.admin).map((p) => p.id);
+      if (!admins.length) return reply("❌ No admins found.");
+
+      const text = admins.map((a) => `@${jidToNumber(a)}`).join(" ");
+      await reply(text, { mentions: admins });
+    } catch (err) {
+      console.error("Tagadmins error:", err);
+      await reply("❌ Failed to tag admins.");
+    }
+  }
+);
+
+// ------------------ spam ------------------
+cmd(
+  {
+    pattern: "spam",
+    category: "group",
+    react: "⚠️",
+    desc: "Spam a message multiple times (owner/sudo only)",
+    usage: ".spam <count> <text>",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isGroup, isOwner, isSudo, from, reply, args }) => {
+    if (!requireGroup(isGroup, reply)) return;
+    if (!isOwner && !isSudo) return reply("❌ Owner/Sudo only.");
+
+    if (args.length < 2) return reply("⚠️ Usage: .spam <count> <text>");
+
+    let count = parseInt(args[0]);
+    if (isNaN(count) || count < 1) return reply("⚠️ Provide a valid number > 0.");
+    if (count > 10) return reply("⚠️ Max spam count is 10.");
+
+    let text = args.slice(1).join(" ");
+    if (!text) return reply("⚠️ Provide a message to spam.");
+
+    await reply(`⚠️ Spamming *${count}* times...`);
+    for (let i = 0; i < count; i++) {
+      await conn.sendMessage(from, { text });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
+);
+
+// ------------------ kickall ------------------
+cmd(
+  {
+    pattern: "kickall",
+    category: "group",
+    react: "👢",
+    desc: "Remove all non-admin members (admins only). Type .stop to cancel.",
+    usage: ".kickall",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isGroup, isAdmin, isBotAdmin, from, sender, reply }) => {
+    if (!requireGroup(isGroup, reply)) return;
+    if (!requireAdmin(isAdmin, reply)) return;
+    if (!requireBotAdmin(isBotAdmin, reply)) return;
+
+    try {
+      const metadata = await conn.groupMetadata(from);
+      const nonAdmins = metadata.participants
+        .filter((p) => !p.admin)
+        .map((p) => p.id);
+
+      if (!nonAdmins.length) return reply("ℹ️ No non-admin members to kick!");
+
+      // Warning message
+      await reply(
+        `⚠️ *KICKALL INITIATED*\n\n` +
+        `👥 Target: ${nonAdmins.length} members\n` +
+        `⏱️ Countdown: 10 seconds\n` +
+        `🛑 Cancel: Type .stop`
+      );
+
+      // Set cancellation flag
+      global.kickallCancelled = global.kickallCancelled || {};
+      global.kickallCancelled[from] = false;
+
+      // Wait 10 seconds
+      for (let i = 10; i > 0; i--) {
+        if (global.kickallCancelled[from]) {
+          delete global.kickallCancelled[from];
+          return reply("✅ Kickall cancelled!");
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      if (global.kickallCancelled[from]) {
+        delete global.kickallCancelled[from];
+        return reply("✅ Kickall cancelled!");
+      }
+
+      // Execute kickall
+      delete global.kickallCancelled[from];
+      await reply("🔥 Executing kickall...");
+
+      let kicked = 0;
+      let failed = 0;
+
+      for (const jid of nonAdmins) {
+        try {
+          await conn.groupParticipantsUpdate(from, [jid], "remove");
+          kicked++;
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+        } catch (err) {
+          failed++;
+          console.error(`Failed to kick ${jid}:`, err.message);
+        }
+      }
+
+      await reply(
+        `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `🛡 *KICKALL RESULT*\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `✅ Kicked: ${kicked}\n` +
+        `❌ Failed: ${failed}\n` +
+        `⚡ By: @${jidToNumber(sender)}`,
+        { mentions: [sender] }
+      );
+    } catch (err) {
+      console.error("Kickall error:", err);
+      await reply("❌ Failed to execute kickall.");
+    }
+  }
+);
+
+// ------------------ stop ------------------
+cmd(
+  {
+    pattern: "stop",
+    category: "group",
+    react: "🛑",
+    desc: "Cancel an ongoing kickall operation",
+    usage: ".stop",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isGroup, isAdmin, from, reply }) => {
+    if (!requireGroup(isGroup, reply)) return;
+    if (!requireAdmin(isAdmin, reply)) return;
+
+    if (!global.kickallCancelled || !global.kickallCancelled[from]) {
+      return reply("ℹ️ No active kickall operation to cancel!");
+    }
+
+    global.kickallCancelled[from] = true;
+    await reply("🛑 Cancelling kickall...");
   }
 );
 
