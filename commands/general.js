@@ -341,7 +341,7 @@ cmd(
   {
     pattern: "whoami",
     alias: ["me"],
-    react: "👤",
+    react: "",
     category: "general",
     desc: "Show your user profile & permissions.",
     usage: ".whoami",
@@ -349,16 +349,90 @@ cmd(
   },
   async (conn, mek, m, { pushname, senderNumber, isOwner, isSudo, isAdmin, isGroup, reply }) => {
     let role = "User";
-    if (isOwner) role = "👑 Owner";
-    else if (isSudo) role = "👮 Sudo/Moderator";
-    else if (isGroup && isAdmin) role = "🛡️ Group Admin";
+    if (isOwner) role = "Owner";
+    else if (isSudo) role = "Sudo/Moderator";
+    else if (isGroup && isAdmin) role = "Group Admin";
 
-    const text = `*👤 USER PROFILE*\n\n` +
-                 `📛 *Name:* ${pushname || "Unknown"}\n` +
-                 `📱 *Number:* ${senderNumber}\n` +
-                 `🎭 *Role:* ${role}`;
+    const text = `*USER PROFILE*\n\n` +
+                 `Name: ${pushname || "Unknown"}\n` +
+                 `Number: ${senderNumber}\n` +
+                 `Role: ${role}`;
 
     await reply(text);
   }
 );
 
+cmd(
+  {
+    pattern: "return",
+    alias: ["send", "resend"],
+    react: "",
+    category: "general",
+    desc: "Return quoted media (image, video, audio, document)",
+    usage: ".return (reply to media)",
+    noPrefix: false
+  },
+  async (conn, mek, m, { from, quoted, reply }) => {
+    if (!quoted) return reply("Please reply to a media message to return it.");
+    
+    try {
+      const messageType = quoted.type;
+      let content = {};
+      
+      switch (messageType) {
+        case "imageMessage":
+          const imageBuffer = await quoted.download();
+          content = {
+            image: imageBuffer,
+            caption: "Returned image"
+          };
+          break;
+          
+        case "videoMessage":
+          const videoBuffer = await quoted.download();
+          content = {
+            video: videoBuffer,
+            caption: "Returned video"
+          };
+          break;
+          
+        case "audioMessage":
+        case "pttMessage":
+          const audioBuffer = await quoted.download();
+          content = {
+            audio: audioBuffer,
+            mimetype: "audio/mp4",
+            ptt: messageType === "pttMessage"
+          };
+          break;
+          
+        case "documentMessage":
+          const docBuffer = await quoted.download();
+          content = {
+            document: docBuffer,
+            mimetype: quoted.mimetype,
+            fileName: quoted.fileName || "document",
+            caption: "Returned document"
+          };
+          break;
+          
+        case "stickerMessage":
+          const stickerBuffer = await quoted.download();
+          content = {
+            sticker: stickerBuffer
+          };
+          break;
+          
+        default:
+          return reply("Unsupported media type. Please reply to an image, video, audio, document, or sticker.");
+      }
+      
+      await conn.sendMessage(from, content, { quoted: mek });
+      await reply("Media returned successfully!");
+      
+    } catch (error) {
+      console.error("Return error:", error);
+      await reply("Failed to return media. Please try again.");
+    }
+  }
+);
