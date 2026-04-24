@@ -391,6 +391,14 @@ Contributions are welcome! Here's how:
 
 ---
 
+## ⚠️ Disclaimer
+
+This bot is **not affiliated with, endorsed by, or sponsored by WhatsApp** in any way. WhatsApp is a registered trademark of Meta Platforms, Inc.
+
+We are **not responsible** for any bans, restrictions, or data loss that may occur from using this bot. Use it entirely **at your own risk**. You are solely responsible for ensuring your usage complies with WhatsApp's Terms of Service and any applicable local laws.
+
+---
+
 ## 📜 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
