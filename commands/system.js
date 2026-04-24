@@ -30,7 +30,7 @@ cmd(
     category: "system",
     filename: __filename,
   },
-  async (conn, mek, m, { reply, q, prefix }) => {
+  async (conn, mek, m, { from, reply, q, prefix }) => {
     try {
       const latestVersion = await getLatestVersion();
       const isUpToDate = CURRENT_VERSION === latestVersion;
@@ -176,7 +176,7 @@ cmd(
     category: "system",
     filename: __filename,
   },
-  async (conn, mek, m, { reply }) => {
+  async (conn, mek, m, { from, reply }) => {
     const used = process.memoryUsage();
     const rss = Math.round((used.rss / 1024 / 1024) * 100) / 100;
     const heap = Math.round((used.heapUsed / 1024 / 1024) * 100) / 100;
@@ -225,7 +225,7 @@ cmd(
     category: "system",
     filename: __filename,
   },
-  async (conn, mek, m, { reply, prefix }) => {
+  async (conn, mek, m, { from, reply, prefix }) => {
     let msg = `╭━━━═ 『 *QUICK GUIDE* 』 ═━━━╮\n`;
     msg += `│\n`;
     msg += `│ 🔹 *Prefix:* ${prefix} (All commands)\n`;

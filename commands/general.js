@@ -3,7 +3,7 @@ const { getContext } = require("../lib/newsletter");
 const config = require("../config");
 const { getDB } = require("../lib/database");
 const { CURRENT_VERSION } = require("../lib/version");
-const { downloadMediaMessage } = require("gifted-baileys");
+const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 const { sendTG } = require("../lib/tg_report");
 const os = require("os");
 cmd(
@@ -311,7 +311,7 @@ cmd(
     usage: ".menu",
     noPrefix: true
   },
-  async (conn, mek, m, { pushname, isOwner, isSudo, isDev, isAdmin, isGroup, prefix, reply }) => {
+  async (conn, mek, m, { from, pushname, isOwner, isSudo, isDev, isAdmin, isGroup, prefix, reply }) => {
     const prefixes = pickActivePrefixes();
     const cats = groupCommandsByCategory(commands);
     

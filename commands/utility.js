@@ -1,6 +1,6 @@
 const { cmd } = require("../command");
 const { getContext } = require("../lib/newsletter");
-const { downloadMediaMessage, downloadContentFromMessage } = require("gifted-baileys");
+const { downloadMediaMessage, downloadContentFromMessage } = require("@whiskeysockets/baileys");
 const axios = require("axios");
 const config = require("../config");
 const fs = require("fs");

@@ -10,7 +10,7 @@ const { loadCommands } = require("./lib/loader");
 const { cleanExpired, storeMessage, getStoredMessage, getDB } = require("./lib/database");
 const { CURRENT_VERSION } = require("./lib/version");
 
-const logger = pino({ level: "silent" }); // Level set to silent for clean output
+const logger = pino({ level: "info" }); // Enabled info level for debugging
 let presenceInterval = null; // Global to manage single interval
 
 const SESSION_PATH = "./sessions";
@@ -57,7 +57,7 @@ async function startBot() {
     console.log("⚠️ No valid session found. Entering Pairing Mode...");
   }
   
-  const baileys = await import("gifted-baileys");
+  const baileys = await import("@whiskeysockets/baileys");
   const {
     makeWASocket,
     useMultiFileAuthState,
@@ -70,6 +70,7 @@ async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState(SESSION_PATH);
   const { version } = await fetchLatestBaileysVersion();
 
+  console.log("🛠️ Initializing Baileys socket...");
   const conn = makeWASocket({
     auth: {
       creds: state.creds,
@@ -80,6 +81,9 @@ async function startBot() {
     markOnlineOnConnect: true,
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
+    connectTimeoutMs: 60000, 
+    defaultQueryTimeoutMs: 120000,
+    keepAliveIntervalMs: 10000,
     version
   });
 
@@ -134,12 +138,14 @@ async function startBot() {
 
         // Notify owner on first successful connection
         if (isFirstConnect) {
+          console.log("📤 Attempting to send 'Online' notification to owner(s)...");
           for (const owner of ownerList) {
             const ownerJid = owner.includes("@") ? owner : `${owner}@s.whatsapp.net`;
             await conn.sendMessage(ownerJid, { 
               text: `✅ *${config.BOT_NAME} is now ONLINE!*\n\nVersion: v${CURRENT_VERSION}\nPrefix: ${config.PREFIX[0]}`,
               contextInfo: require("./lib/newsletter").getContext({ title: "System Online", body: "Connection established" })
-            }).catch(() => {});
+            }).then(() => console.log(`✅ Sent notification to ${ownerJid}`))
+              .catch((err) => console.error(`❌ Failed to send notification to ${ownerJid}:`, err.message));
           }
           isFirstConnect = false;
         }
@@ -175,10 +181,17 @@ async function startBot() {
   }, 6 * 60 * 60 * 1000);
 
   conn.ev.on("messages.upsert", async ({ messages, type }) => {
+    console.log(`📡 [RAW EVENT] Received ${messages.length} message(s), type: ${type}`);
     if (type !== "notify") return;
     for (const mek of messages) {
       if (!mek.message) continue;
       
+      console.log(`📩 Message Received [${type}]:`, JSON.stringify({
+        from: mek.key.remoteJid,
+        pushName: mek.pushName,
+        messageStubType: mek.messageStubType
+      }, null, 2));
+
       // Handle status messages (auto-read and react) if enabled
       const db = getDB();
       const autoStatus = db.env?.AUTO_STATUS !== undefined ? db.env.AUTO_STATUS : config.AUTO_STATUS;
@@ -202,6 +215,7 @@ async function startBot() {
       
       // Skip messages sent before the bot started (avoids re-running old commands on reconnect)
       const m = await serialize(mek, conn);
+      console.log(`📄 Serialized body: "${m.body}"`);
       await handler(conn, mek, m);
 
       if (config.ANTI_DELETE) {

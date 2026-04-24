@@ -1,6 +1,7 @@
 const { cmd } = require("../command");
 const { getContext } = require("../lib/newsletter");
 const { getDB, saveGlobal } = require("../lib/database");
+const { downloadMediaMessage, downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 function jidToNumber(jid) {
   if (!jid) return "";
@@ -1081,14 +1082,9 @@ cmd(
     if (!requireAdmin(isAdmin, reply)) return;
     if (!requireBotAdmin(isBotAdmin, reply)) return;
 
-    // Check if gifted-baileys is available (groupStatusMessage is a gifted-baileys feature)
-    const hasGiftedBaileys = !!conn.giftedStatus || !!conn.sendGroupStatus;
-    if (!hasGiftedBaileys) {
-      return reply(
-        "⚠️ *Group Status Error*\n\n" +
-        "The gifted-baileys package is required for group status messages."
-      );
-    }
+    // MANUAL IMPLEMENTATION FOR OFFICIAL BAILEYS
+    // We send a status to status@broadcast but restrict it to this group only.
+    const statusRecipients = [from]; // Send to current group
 
     if (!q) {
       return reply(
@@ -1118,95 +1114,131 @@ cmd(
       if (type === "text") {
         const text = args.slice(1).join(" ").trim();
         if (!text) return reply("⚠️ Provide text content.\nUsage: `.gstatus text Hello world!`");
-        payload = {
-          groupStatusMessage: {
+        
+        const { generateWAMessageFromContent } = require("@whiskeysockets/baileys");
+        
+        // 1. Post to Status Tab (Privacy: Group members)
+        const statusMsg = await generateWAMessageFromContent("status@broadcast", {
+          extendedTextMessage: {
             text: text,
-            backgroundColor: "#FF5733",
-            font: 1
+            backgroundArgb: 0xff5733ff,
+            font: 3
           }
-        };
+        }, { statusJidList: [from] });
+        await conn.relayMessage("status@broadcast", statusMsg.message, { messageId: statusMsg.key.id, statusJidList: [from] });
+
+        // 2. Notify Group (Trigger)
+        const groupMsg = await generateWAMessageFromContent(from, {
+          groupStatusMessageV2: {
+            message: statusMsg.message
+          }
+        }, { quoted: mek });
+        await conn.relayMessage(from, groupMsg.message, { messageId: groupMsg.key.id });
+
+        return reply("✅ Full Hybrid Group Status posted!");
       }
 
       else if (type === "image") {
-        let imageUrl = null;
-        let caption = "";
-
-        // Check if quoted message is an image
+        let buffer, caption;
         if (quoted && quoted.type === "imageMessage") {
-          const buffer = await quoted.download();
-          if (!buffer) return reply("❌ Failed to download quoted image.");
-          payload = {
-            groupStatusMessage: {
-              image: buffer,
-              caption: args.slice(1).join(" ").trim()
-            }
-          };
+          buffer = await quoted.download();
+          caption = args.slice(1).join(" ").trim();
         } else {
-          imageUrl = args[1];
+          const imageUrl = args[1];
+          if (!imageUrl) return reply("⚠️ Provide image URL or reply to an image.");
+          buffer = { url: imageUrl };
           caption = args.slice(2).join(" ").trim();
-          if (!imageUrl) return reply("⚠️ Provide image URL or reply to an image.\nUsage: `.gstatus image <url> [caption]`");
-          payload = {
-            groupStatusMessage: {
-              image: { url: imageUrl },
-              caption
-            }
-          };
         }
+
+        const { prepareWAMessageMedia, generateWAMessageFromContent } = require("@whiskeysockets/baileys");
+        const media = await prepareWAMessageMedia({ image: buffer }, { upload: conn.waUploadToServer });
+        
+        // 1. Post to Status Tab
+        const statusMsg = await generateWAMessageFromContent("status@broadcast", {
+          imageMessage: {
+            ...media.imageMessage,
+            caption: caption
+          }
+        }, { statusJidList: [from] });
+        await conn.relayMessage("status@broadcast", statusMsg.message, { messageId: statusMsg.key.id, statusJidList: [from] });
+
+        // 2. Notify Group
+        const groupMsg = await generateWAMessageFromContent(from, {
+          groupStatusMessageV2: {
+            message: statusMsg.message
+          }
+        }, { quoted: mek });
+        await conn.relayMessage(from, groupMsg.message, { messageId: groupMsg.key.id });
+
+        return reply("✅ Full Hybrid Image Status posted!");
       }
 
       else if (type === "video") {
-        let videoUrl = null;
-        let caption = "";
-
+        let buffer, caption;
         if (quoted && quoted.type === "videoMessage") {
-          const buffer = await quoted.download();
-          if (!buffer) return reply("❌ Failed to download quoted video.");
-          payload = {
-            groupStatusMessage: {
-              video: buffer,
-              caption: args.slice(1).join(" ").trim()
-            }
-          };
+          buffer = await quoted.download();
+          caption = args.slice(1).join(" ").trim();
         } else {
-          videoUrl = args[1];
+          const videoUrl = args[1];
+          if (!videoUrl) return reply("⚠️ Provide video URL or reply to a video.");
+          buffer = { url: videoUrl };
           caption = args.slice(2).join(" ").trim();
-          if (!videoUrl) return reply("⚠️ Provide video URL or reply to a video.\nUsage: `.gstatus video <url> [caption]`");
-          payload = {
-            groupStatusMessage: {
-              video: { url: videoUrl },
-              caption
-            }
-          };
         }
+
+        const { prepareWAMessageMedia, generateWAMessageFromContent } = require("@whiskeysockets/baileys");
+        const media = await prepareWAMessageMedia({ video: buffer }, { upload: conn.waUploadToServer });
+        
+        // 1. Post to Status Tab
+        const statusMsg = await generateWAMessageFromContent("status@broadcast", {
+          videoMessage: {
+            ...media.videoMessage,
+            caption: caption
+          }
+        }, { statusJidList: [from] });
+        await conn.relayMessage("status@broadcast", statusMsg.message, { messageId: statusMsg.key.id, statusJidList: [from] });
+
+        // 2. Notify Group
+        const groupMsg = await generateWAMessageFromContent(from, {
+          groupStatusMessageV2: {
+            message: statusMsg.message
+          }
+        }, { quoted: mek });
+        await conn.relayMessage(from, groupMsg.message, { messageId: groupMsg.key.id });
+
+        return reply("✅ Full Hybrid Video Status posted!");
       }
 
       else if (type === "audio") {
+        let buffer;
         if (quoted && (quoted.type === "audioMessage" || quoted.type === "pttMessage")) {
-          const buffer = await quoted.download();
-          if (!buffer) return reply("❌ Failed to download quoted audio.");
-          payload = {
-            groupStatusMessage: {
-              audio: buffer,
-              mimetype: "audio/mp4",
-              ptt: true
-            }
-          };
+          buffer = await quoted.download();
         } else {
           const audioUrl = args[1];
-          if (!audioUrl) return reply("⚠️ Provide audio URL or reply to an audio/voice message.\nUsage: `.gstatus audio <url>`");
-          payload = {
-            groupStatusMessage: {
-              audio: { url: audioUrl },
-              mimetype: "audio/mp4",
-              ptt: true
-            }
-          };
+          if (!audioUrl) return reply("⚠️ Provide audio URL or reply to an audio message.");
+          buffer = { url: audioUrl };
         }
+
+        const { prepareWAMessageMedia, generateWAMessageFromContent } = require("@whiskeysockets/baileys");
+        const media = await prepareWAMessageMedia({ audio: buffer }, { upload: conn.waUploadToServer });
+        
+        // 1. Post to Status Tab
+        const statusMsg = await generateWAMessageFromContent("status@broadcast", {
+          audioMessage: {
+            ...media.audioMessage
+          }
+        }, { statusJidList: [from] });
+        await conn.relayMessage("status@broadcast", statusMsg.message, { messageId: statusMsg.key.id, statusJidList: [from] });
+
+        // 2. Notify Group
+        const groupMsg = await generateWAMessageFromContent(from, {
+          groupStatusMessageV2: {
+            message: statusMsg.message
+          }
+        }, { quoted: mek });
+        await conn.relayMessage(from, groupMsg.message, { messageId: groupMsg.key.id });
+
+        return reply("✅ Full Hybrid Audio Status posted!");
       }
-
-      await conn.sendMessage(from, payload);
-      await reply(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} group status sent!`);
-
     } catch (err) {
       console.error("Gstatus error:", err);
       await reply(`❌ Failed to send ${type} group status.\n\n*Error:* ${err.message || err}`);

@@ -1,7 +1,7 @@
 const { cmd } = require("../command");
 const { getContext } = require("../lib/newsletter");
 const { uploadToCatbox } = require("../lib/catbox");
-const { downloadMediaMessage } = require("gifted-baileys");
+const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 const axios = require("axios");
 const config = require("../config");
 
