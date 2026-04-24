@@ -12,7 +12,7 @@ cmd({
   desc: "Stalk a TikTok profile",
   usage: ".ttstalk [username]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply(`Yo! Who are we stalking on TikTok? Usage: ${prefix}ttstalk davido`);
 
@@ -62,7 +62,7 @@ cmd({
   desc: "Stalk a GitHub profile",
   usage: ".github [username]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply("Yo! Provide a GitHub username.");
 
@@ -109,7 +109,7 @@ cmd({
   desc: "Stalk an Instagram profile",
   usage: ".igstalk [username]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply("Yo! Provide an IG username.");
 
@@ -155,7 +155,7 @@ cmd({
   desc: "Stalk a Twitter/X profile",
   usage: ".twstalk [username]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply("Yo! Provide an X username.");
 
@@ -202,7 +202,7 @@ cmd({
   desc: "Stalk a YouTube channel",
   usage: ".ytstalk [handle]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply("Yo! Provide a YouTube handle.");
 
@@ -247,7 +247,7 @@ cmd({
   desc: "Stalk a Telegram profile/channel",
   usage: ".tgstalk [username]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply("Yo! Provide a Telegram username.");
 
@@ -292,7 +292,7 @@ cmd({
   desc: "Stalk an NPM package",
   usage: ".npmstalk [package name]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply("Yo! What package are we checking? Usage: .npm ballieys");
 
@@ -333,7 +333,7 @@ cmd({
   desc: "Stalk a WhatsApp channel",
   usage: ".wastalk [url]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply("Yo! Paste a WhatsApp channel link.");
 
@@ -374,7 +374,7 @@ cmd({
   desc: "Stalk a Steam profile",
   usage: ".steamstalk [username]",
   noPrefix: false,
-}, async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply("Yo! Give me a Steam vanity URL username.");
 
