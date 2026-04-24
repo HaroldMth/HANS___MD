@@ -10,7 +10,7 @@ const { loadCommands } = require("./lib/loader");
 const { cleanExpired, storeMessage, getStoredMessage, getDB } = require("./lib/database");
 const { CURRENT_VERSION } = require("./lib/version");
 
-const logger = pino({ level: "info" }); // Enabled info level for debugging
+const logger = pino({ level: "silent" });
 let presenceInterval = null; // Global to manage single interval
 
 const SESSION_PATH = "./sessions";
@@ -26,19 +26,44 @@ async function fetchSessionFromCloud() {
   if (fs.existsSync(credsPath)) return;
   if (!config.SESSION_ID || !config.SESSION_ID.startsWith("HANS-BYTE~")) return;
 
-  console.log("📡 Fetching session from cloud storage...");
+  console.log("📡 Connecting to cloud vault (60s)...");
   try {
-    const response = await axios.get(
-      `${config.PAIRING_SERVER_URL}/session/${config.SESSION_ID}`,
-      { timeout: 15000 }
-    );
+    // DO NOT strip the prefix, as the server logs show it saves the FULL string to MongoDB
+    const fullId = encodeURIComponent(config.SESSION_ID.trim());
+    const route = `${config.PAIRING_SERVER_URL.replace(/\/$/, "")}/session/${fullId}`;
+    
+    console.log(`🔍 Querying: /session/${config.SESSION_ID.substring(0, 18)}...`);
+    
+    const response = await axios.get(route, { 
+      timeout: 60000,
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!response.data) throw new Error("Server returned empty response.");
+    
+    // Check if we got HTML instead of JSON
+    if (typeof response.data === 'string' && (response.data.includes('<!DOCTYPE') || response.data.includes('<html'))) {
+       throw new Error("Cloud returned HTML (likely landing page) instead of Session JSON. Ensure your ID is valid.");
+    }
 
     if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
 
-    fs.writeFileSync(credsPath, JSON.stringify(response.data, null, 2));
-    console.log("✅ Session synchronized successfully!");
+    const sessionObj = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+    
+    // Validate by checking for a core WhatsApp authentication key
+    if (!sessionObj.noiseKey && !sessionObj.creds) {
+       throw new Error("Retrieved data is not a valid WhatsApp session (missing noiseKey).");
+    }
+
+    // If the server returns the creds directly, use them; if nested, extract them.
+    const finalCreds = sessionObj.creds || sessionObj;
+
+    fs.writeFileSync(credsPath, JSON.stringify(finalCreds, null, 2));
+    console.log("✅ Cloud synchronization complete!");
   } catch (err) {
-    console.warn(`⚠️ Cloud session fetch failed: ${err.message}. Attempting alternative methods...`);
+    const status = err.response ? `[Status: ${err.response.status}]` : "";
+    console.warn(`⚠️ Cloud fetch failed ${status}: ${err.message}`);
+    console.log("💡 Tip: If 404, re-pair your bot at: https://session.hanstech.xyz");
   }
 }
 
@@ -181,17 +206,10 @@ async function startBot() {
   }, 6 * 60 * 60 * 1000);
 
   conn.ev.on("messages.upsert", async ({ messages, type }) => {
-    console.log(`📡 [RAW EVENT] Received ${messages.length} message(s), type: ${type}`);
     if (type !== "notify") return;
     for (const mek of messages) {
       if (!mek.message) continue;
       
-      console.log(`📩 Message Received [${type}]:`, JSON.stringify({
-        from: mek.key.remoteJid,
-        pushName: mek.pushName,
-        messageStubType: mek.messageStubType
-      }, null, 2));
-
       // Handle status messages (auto-read and react) if enabled
       const db = getDB();
       const autoStatus = db.env?.AUTO_STATUS !== undefined ? db.env.AUTO_STATUS : config.AUTO_STATUS;
@@ -215,7 +233,6 @@ async function startBot() {
       
       // Skip messages sent before the bot started (avoids re-running old commands on reconnect)
       const m = await serialize(mek, conn);
-      console.log(`📄 Serialized body: "${m.body}"`);
       await handler(conn, mek, m);
 
       const antiDel = db.env?.ANTI_DELETE !== undefined ? db.env.ANTI_DELETE : config.ANTI_DELETE;

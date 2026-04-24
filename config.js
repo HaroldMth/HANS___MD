@@ -14,9 +14,9 @@ module.exports = {
   AUTO_TYPING: process.env.AUTO_TYPING === "true",   
   AUTO_RECORDING: process.env.AUTO_RECORDING === "true",
   ALWAYS_ONLINE: process.env.ALWAYS_ONLINE === "true", 
-  GITHUB_URL: process.env.GITHUB_URL || "https://github.com/haroldmth/hans__md",
-  REPO_NAME: process.env.REPO_NAME || "hans__md",
+  GITHUB_URL: process.env.GITHUB_URL || "https://github.com/haroldmth/hans___md",
+  REPO_NAME: process.env.REPO_NAME || "hans___md",
   // Telegram Error Reporting
   TG_BOT_TOKEN: process.env.TG_BOT_TOKEN || "", 
-  TG_CHAT_ID: process.env.TG_CHAT_ID || ""      
+  TG_CHAT_ID: process.env.TG_CHAT_ID || ""
 };
