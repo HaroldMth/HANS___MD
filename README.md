@@ -6,10 +6,10 @@
 
 ### ⚡ The Ultimate WhatsApp Multi-Device Bot ⚡
 
-[![Stars](https://img.shields.io/github/stars/haroldmth/hans__md?style=for-the-badge&color=yellow)](https://github.com/haroldmth/hans__md/stargazers)
-[![Forks](https://img.shields.io/github/forks/haroldmth/hans__md?style=for-the-badge&color=blue)](https://github.com/haroldmth/hans__md/network/members)
-[![Issues](https://img.shields.io/github/issues/haroldmth/hans__md?style=for-the-badge&color=red)](https://github.com/haroldmth/hans__md/issues)
-[![License](https://img.shields.io/github/license/haroldmth/hans__md?style=for-the-badge&color=green)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/haroldmth/hans___md?style=for-the-badge&color=yellow)](https://github.com/haroldmth/hans___md/stargazers)
+[![Forks](https://img.shields.io/github/forks/haroldmth/hans___md?style=for-the-badge&color=blue)](https://github.com/haroldmth/hans___md/network/members)
+[![Issues](https://img.shields.io/github/issues/haroldmth/hans___md?style=for-the-badge&color=red)](https://github.com/haroldmth/hans___md/issues)
+[![License](https://img.shields.io/github/license/haroldmth/hans___md?style=for-the-badge&color=green)](LICENSE)
 
 **A blazing-fast, feature-packed WhatsApp bot built on Baileys v7 with LID support, 225+ commands, and a premium experience.**
 
@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/GET%20SESSION%20ID-Click%20Here-brightgreen?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Get Session ID" />
 </a>
 &nbsp;&nbsp;
-<a href="https://github.com/haroldmth/hans__md/fork">
+<a href="https://github.com/haroldmth/hans___md/fork">
   <img src="https://img.shields.io/badge/FORK%20REPO-Click%20Here-blue?style=for-the-badge&logo=github&logoColor=white" alt="Fork Repo" />
 </a>
 
@@ -167,7 +167,7 @@ Your Session ID is required to authenticate the bot with WhatsApp. Getting one i
 
 ### 🟣 Deploy to Heroku
 
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/haroldmth/hans__md)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/haroldmth/hans___md)
 
 1. Click the **Deploy to Heroku** button above
 2. Fill in the environment variables (see [Configuration](#️-configuration))
@@ -181,7 +181,7 @@ Your Session ID is required to authenticate the bot with WhatsApp. Getting one i
 
 1. Fork this repo to your GitHub account
 2. Go to [koyeb.com](https://koyeb.com) and create a new **Web Service**
-3. Connect your GitHub and select the `hans__md` repo
+3. Connect your GitHub and select the `hans___md` repo
 4. Set the **Build Command:** `pnpm install`
 5. Set the **Run Command:** `node index.js`
 6. Add all environment variables from [Configuration](#️-configuration)
@@ -193,7 +193,7 @@ Your Session ID is required to authenticate the bot with WhatsApp. Getting one i
 
 1. Fork this repo
 2. Go to [render.com](https://render.com) → **New** → **Background Worker**
-3. Connect GitHub and select `hans__md`
+3. Connect GitHub and select `hans___md`
 4. **Build Command:** `pnpm install`
 5. **Start Command:** `node index.js`
 6. Add environment variables
@@ -212,8 +212,8 @@ sudo apt install -y nodejs
 npm install -g pnpm pm2
 
 # 3. Clone the repository
-git clone https://github.com/haroldmth/hans__md.git
-cd hans__md
+git clone https://github.com/haroldmth/hans___md.git
+cd hans___md
 
 # 4. Install dependencies
 pnpm install
@@ -254,8 +254,8 @@ pkg install -y nodejs git
 npm install -g pnpm
 
 # 4. Clone the repo
-git clone https://github.com/haroldmth/hans__md.git
-cd hans__md
+git clone https://github.com/haroldmth/hans___md.git
+cd hans___md
 
 # 5. Install dependencies
 pnpm install
@@ -286,8 +286,8 @@ node index.js
 npm install -g pnpm
 
 # 3. Clone the repo
-git clone https://github.com/haroldmth/hans__md.git
-cd hans__md
+git clone https://github.com/haroldmth/hans___md.git
+cd hans___md
 
 # 4. Install dependencies
 pnpm install
