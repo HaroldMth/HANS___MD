@@ -1,0 +1,34 @@
+{
+  "sudo": [
+    "2376565283230",
+    "23481173477190"
+  ],
+  "env": {},
+  "warnings": {},
+  "antilink": {
+    "120363405201083260@g.us": {
+      "mode": "warn",
+      "limit": 3
+    }
+  },
+  "welcome": {
+    "120363405201083260@g.us": {
+      "enabled": true,
+      "message": "Welcome {user}!"
+    }
+  },
+  "blocked": [],
+  "banned": {},
+  "mode": "public",
+  "chatMode": "both",
+  "cooldowns": {},
+  "antilinkWarns": {
+    "120363405201083260@g.us:50942347433": 1
+  },
+  "goodbye": {
+    "120363405201083260@g.us": {
+      "enabled": true,
+      "message": "Goodbye @{user}!"
+    }
+  }
+}

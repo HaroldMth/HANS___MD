@@ -1,13 +1,21 @@
+require("dotenv").config();
+
 module.exports = {
-  BOT_NAME: "HANS MD",
-  BOT_VERSION: "1.0.0",
-  OWNER_NAME: "Harold",
-  OWNER_NUMBER: ["237696900612"],
-  PREFIX: ["."],
-  AUTO_REACT: true,    // set false to disable auto emoji reactions
-  ANTI_DELETE: true,   // set false to disable recovering deleted messages
-  AUTO_READ: true,     // set false to disable auto-reading incoming messages
-  AUTO_TYPING: true,   // set false to disable auto-typing presence
-  AUTO_RECORDING: true,// set false to disable auto-recording presence
-  ALWAYS_ONLINE: true  // set false to disable forced always-online status
+  SESSION_ID: process.env.SESSION_ID || "HANS-BYTE~PASTE_YOUR_ID_HERE",
+  BOT_NAME: process.env.BOT_NAME || "HANS MD",
+  OWNER_NAME: process.env.OWNER_NAME || "Harold",
+  OWNER_NUMBER: (process.env.OWNER_NUMBER || "237680260772").split(","),
+  PREFIX: (process.env.PREFIX || ".").split(""),
+  AUTO_REACT: process.env.AUTO_REACT === "true",    
+  ANTI_DELETE: process.env.ANTI_DELETE === "true",   
+  AUTO_READ: process.env.AUTO_READ === "true",     
+  AUTO_STATUS: process.env.AUTO_STATUS === "true",   
+  AUTO_TYPING: process.env.AUTO_TYPING === "true",   
+  AUTO_RECORDING: process.env.AUTO_RECORDING === "true",
+  ALWAYS_ONLINE: process.env.ALWAYS_ONLINE === "true", 
+  GITHUB_URL: process.env.GITHUB_URL || "https://github.com/haroldmth/hans__md",
+  REPO_NAME: process.env.REPO_NAME || "hans__md",
+  // Telegram Error Reporting
+  TG_BOT_TOKEN: process.env.TG_BOT_TOKEN || "", 
+  TG_CHAT_ID: process.env.TG_CHAT_ID || ""      
 };
