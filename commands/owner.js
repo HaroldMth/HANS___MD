@@ -116,6 +116,42 @@ cmd(
 
 cmd(
   {
+    pattern: "antidelete",
+    alias: ["antidel"],
+    category: "owner",
+    react: "🗑️",
+    desc: "Toggle anti-delete logging",
+    usage: ".antidel on | off",
+    noPrefix: false
+  },
+  async (conn, mek, m, { isOwner, isSudo, q, reply }) => {
+    if (!isOwner && !isSudo) return reply("❌ This command is for owner/sudo users only.");
+    const arg = q.toLowerCase().trim();
+    const modes = ["on", "off", "dm", "group", "both"];
+    if (!modes.includes(arg)) return reply("Usage: .antidel dm | group | both | off");
+
+    let status;
+    if (arg === "off") status = false;
+    else if (arg === "on") status = "dm"; // Default 'on' to DM for safety
+    else status = arg;
+
+    const db = getDB();
+    db.env = db.env && typeof db.env === "object" ? db.env : {};
+    db.env.ANTI_DELETE = status;
+    saveGlobal(db);
+
+    let modeDesc = "";
+    if (status === false) modeDesc = "OFF 🔴";
+    else if (status === "dm") modeDesc = "Owner DM 🔒";
+    else if (status === "group") modeDesc = "Public Group 📢";
+    else if (status === "both") modeDesc = "DM + Group 🛡️";
+
+    await reply(`✅ Anti-Delete mode set to: ${modeDesc}`);
+  }
+);
+
+cmd(
+  {
     pattern: "addsudo",
     alias: ["addmod"],
     category: "owner",

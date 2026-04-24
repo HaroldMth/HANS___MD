@@ -218,28 +218,57 @@ async function startBot() {
       console.log(`📄 Serialized body: "${m.body}"`);
       await handler(conn, mek, m);
 
-      if (config.ANTI_DELETE) {
+      const antiDel = db.env?.ANTI_DELETE !== undefined ? db.env.ANTI_DELETE : config.ANTI_DELETE;
+      if (antiDel) {
         storeMessage(mek);
       }
     }
   });
 
   conn.ev.on("messages.update", async (updates) => {
-    if (!config.ANTI_DELETE) return;
+    const db = getDB();
+    const antiDel = db.env?.ANTI_DELETE !== undefined ? db.env.ANTI_DELETE : config.ANTI_DELETE;
+    if (!antiDel) return;
     for (const update of updates) {
       if (update?.update?.message === null) {
         const stored = getStoredMessage(update?.key?.id);
         if (!stored) continue;
 
-        for (const ownerNumber of config.OWNER_NUMBER) {
-          const ownerJid = `${ownerNumber}@s.whatsapp.net`;
-          await conn.sendMessage(ownerJid, {
-            text: `🗑️ *Deleted Message*\n\nFrom: ${stored.from}\nType: ${stored.type}\nTime: ${new Date(stored.timestamp).toLocaleString()}\n\n${stored.body}`,
-            contextInfo: require("./lib/newsletter").getContext({
-              title: "Anti-Delete",
-              body: "Deleted message recovered"
-            })
-          });
+        const mode = typeof antiDel === "string" ? antiDel.toLowerCase() : (antiDel === true ? "dm" : "off");
+        if (mode === "off") continue;
+
+        const reportText = `╭━━━═ 『 *ANTI-DELETE* 』 ═━━━╮\n` +
+                          `┃ 🗑️ *Status:* Recovered\n` +
+                          `┃ 👤 *From:* @${stored.sender.split("@")[0]}\n` +
+                          `┃ 📍 *Source:* ${stored.from.endsWith("@g.us") ? "Group Message" : "Private Chat"}\n` +
+                          `┃ 📅 *Date:* ${new Date(stored.timestamp).toLocaleDateString()}\n` +
+                          `┃ ⏰ *Time:* ${new Date(stored.timestamp).toLocaleTimeString()}\n` +
+                          `┃ 📦 *Type:* ${stored.type.toUpperCase()}\n` +
+                          `╰━━━━━━━━━━══━━━━━━━━━━╯\n\n` +
+                          `*『 ORIGINAL MESSAGE 』*\n` +
+                          `━━━━━━━━━━━━━━━━━━\n` +
+                          `${stored.body}\n` +
+                          `━━━━━━━━━━━━━━━━━━`;
+
+        const contextInfo = {
+          ...require("./lib/newsletter").getContext({
+            title: "🚨 Message Intercepted 🚨",
+            body: `Source: ${stored.from}`
+          }),
+          mentionedJid: [stored.sender]
+        };
+
+        // 1. Send to Owner DM (if mode is 'dm' or 'both')
+        if (mode === "dm" || mode === "both") {
+          for (const ownerNumber of config.OWNER_NUMBER) {
+            const ownerJid = `${ownerNumber}@s.whatsapp.net`;
+            await conn.sendMessage(ownerJid, { text: reportText, contextInfo }).catch(() => {});
+          }
+        }
+
+        // 2. Send to Group/Source (if mode is 'group' or 'both')
+        if (mode === "group" || mode === "both") {
+          await conn.sendMessage(stored.from, { text: reportText, contextInfo }).catch(() => {});
         }
       }
     }

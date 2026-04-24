@@ -5830,5 +5830,333 @@
     "type": "protocolMessage",
     "timestamp": 1777040318551,
     "expiresAt": 1777213118551
+  },
+  {
+    "id": "3EB01C7479EE10B017A1B0",
+    "from": "120363279781996698@g.us",
+    "body": "Petit",
+    "type": "extendedTextMessage",
+    "timestamp": 1777040427790,
+    "expiresAt": 1777213227790
+  },
+  {
+    "id": "A50684CDE2C30AB307C32CB6FD10015F",
+    "from": "120363376498966066@g.us",
+    "body": "*fichier MTN ILLIMITÉE DISPONIBLE*\n- *10 giga* = *1000 FCFA 30 jours* \nDécouvrez nos offres du mois :\nMTN ilimité 1mois 2500f\nAvec http injector Android uniquement 👇👇\n📩http://wa.me/237681057710\n\n\n\n16h30 fin des abonnements",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777040599666,
+    "expiresAt": 1777213399666
+  },
+  {
+    "id": "A562BD2FED72625A88E4BAC52457C48F",
+    "from": "120363376498966066@g.us",
+    "body": "@all",
+    "type": "extendedTextMessage",
+    "timestamp": 1777040600714,
+    "expiresAt": 1777213400714
+  },
+  {
+    "id": "A5FF15CFC6D865767CA3BD96591239A6",
+    "from": "120363376498966066@g.us",
+    "body": "",
+    "type": "protocolMessage",
+    "timestamp": 1777040627332,
+    "expiresAt": 1777213427332
+  },
+  {
+    "id": "3EB069D5B84F6D58BE7763",
+    "from": "120363244207952270@g.us",
+    "body": "🎵 Downloading: *Pop like this #Zest x #jerseyclub remix  @prodbycpkshawn*\n⏱ Duration: 1:25",
+    "type": "imageMessage",
+    "timestamp": 1777040751851,
+    "expiresAt": 1777213551851
+  },
+  {
+    "id": "ACE9298994AAF91C6F2F0BCA5C904ABA",
+    "from": "120363244207952270@g.us",
+    "body": ".play pop it like this by prodbyckshawn",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777040757838,
+    "expiresAt": 1777213557838
+  },
+  {
+    "id": "A57F811901C9D26A1075A53657480365",
+    "from": "120363389710042394@g.us",
+    "body": "*fichier MTN ILLIMITÉE DISPONIBLE*\n- *10 giga* = *1000 FCFA 30 jours* \n\n*Découvrez nos offres du mois :*\n*MTN ilimité 1mois 2500f*\n*Avec http injector Android* *uniquement 👇👇*\n*📩http://wa.me/237681057710*\n\n\n\n16h30 fin des abonnements",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777040791361,
+    "expiresAt": 1777213591361
+  },
+  {
+    "id": "3EB0B4E80BBA5D53766054",
+    "from": "120363244207952270@g.us",
+    "body": "",
+    "type": "audioMessage",
+    "timestamp": 1777040798038,
+    "expiresAt": 1777213598038
+  },
+  {
+    "id": "A5652E38DD14F49E538D3BD6D5D24463",
+    "from": "120363030297611030@g.us",
+    "body": "",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777040825058,
+    "expiresAt": 1777213625058
+  },
+  {
+    "id": "ACE6A5C65569589256817AB5A8FEF4BF",
+    "from": "120363286906520623@g.us",
+    "body": "",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777040928965,
+    "expiresAt": 1777213728965
+  },
+  {
+    "id": "3EB0EC2CF2ED24B31EF5CA",
+    "from": "120363244207952270@g.us",
+    "body": "🎵 Downloading: *Ishe Wangu*\n⏱ Duration: 2:41",
+    "type": "imageMessage",
+    "timestamp": 1777040951663,
+    "expiresAt": 1777213751663
+  },
+  {
+    "id": "3EB0E01B3712FF62CF36DC",
+    "from": "120363244207952270@g.us",
+    "body": "🎵 Downloading: *🎵 TAZVIONA MURI MWARI*\n⏱ Duration: 5:39",
+    "type": "imageMessage",
+    "timestamp": 1777040968996,
+    "expiresAt": 1777213768996
+  },
+  {
+    "id": "3EB08209FF4BD4C8A05E69",
+    "from": "120363244207952270@g.us",
+    "body": "",
+    "type": "audioMessage",
+    "timestamp": 1777040997014,
+    "expiresAt": 1777213797014
+  },
+  {
+    "id": "3EB05E08D085AC08F19DA4",
+    "from": "120363405201083260@g.us",
+    "body": ".status",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041003651,
+    "expiresAt": 1777213803651
+  },
+  {
+    "id": "3EB08C89E1B610C387D490",
+    "from": "120363244207952270@g.us",
+    "body": "🎵 Downloading: *Tinochema Abhurama – GraceWave x Nyasha Echo | AI Prayer Song*\n⏱ Duration: 3:00",
+    "type": "imageMessage",
+    "timestamp": 1777041017372,
+    "expiresAt": 1777213817372
+  },
+  {
+    "id": "ACD1A4EB0659119BE34666FC589FF4D9",
+    "from": "120363244207952270@g.us",
+    "body": ".play tinochema abhurama GraceWave",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041018063,
+    "expiresAt": 1777213818063
+  },
+  {
+    "id": "ILSYM-FC6042DC487B",
+    "from": "120363405201083260@g.us",
+    "body": "🎐",
+    "type": "reactionMessage",
+    "timestamp": 1777041049016,
+    "expiresAt": 1777213849016
+  },
+  {
+    "id": "ILSYM-92853FB12E29",
+    "from": "120363405201083260@g.us",
+    "body": "",
+    "type": "buttonsMessage",
+    "timestamp": 1777041050988,
+    "expiresAt": 1777213850988
+  },
+  {
+    "id": "AC762718363839779BC65E420E40BABA",
+    "from": "120363244207952270@g.us",
+    "body": ".play Ishe Wangu GracWave",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777041051881,
+    "expiresAt": 1777213851881
+  },
+  {
+    "id": "3EB01801CA9E5AA5569BBE",
+    "from": "120363405201083260@g.us",
+    "body": ".status HI",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041052320,
+    "expiresAt": 1777213852320
+  },
+  {
+    "id": "3EB009D16B2BA45A617C21",
+    "from": "120363405201083260@g.us",
+    "body": ".menu",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041056306,
+    "expiresAt": 1777213856306
+  },
+  {
+    "id": "3EB0B5FAD4D2BEAE8F2133",
+    "from": "120363244207952270@g.us",
+    "body": "",
+    "type": "audioMessage",
+    "timestamp": 1777041064395,
+    "expiresAt": 1777213864395
+  },
+  {
+    "id": "3EB0224D74063988A83005",
+    "from": "120363405201083260@g.us",
+    "body": ".status",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041066603,
+    "expiresAt": 1777213866603
+  },
+  {
+    "id": "3EB0897D38ADD0867A9D43",
+    "from": "120363244207952270@g.us",
+    "body": "❌ Failed to download song.",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041080275,
+    "expiresAt": 1777213880275
+  },
+  {
+    "id": "AC2D67506CB92F47DFD5C6B7E29FF206",
+    "from": "120363244207952270@g.us",
+    "body": ".play paunochema Gracewave",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041082153,
+    "expiresAt": 1777213882153
+  },
+  {
+    "id": "3EB08E9140A07BD51A38F3",
+    "from": "120363244207952270@g.us",
+    "body": "",
+    "type": "audioMessage",
+    "timestamp": 1777041116022,
+    "expiresAt": 1777213916022
+  },
+  {
+    "id": "3EB027A63FD735E204F1D8",
+    "from": "120363405201083260@g.us",
+    "body": ".system",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041136809,
+    "expiresAt": 1777213936809
+  },
+  {
+    "id": "3EB0050CBBD29F0B5F64FB",
+    "from": "120363405201083260@g.us",
+    "body": ".exec whoami",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041165078,
+    "expiresAt": 1777213965078
+  },
+  {
+    "id": "3EB02A1E428B32F4FB85B6",
+    "from": "120363244207952270@g.us",
+    "body": "🎵 Downloading: *GraceWave - Ndakainamatira Nyaya Iyoyi ( Official Ai Video)*\n⏱ Duration: 4:22",
+    "type": "imageMessage",
+    "timestamp": 1777041207029,
+    "expiresAt": 1777214007029
+  },
+  {
+    "id": "3EB01A29F363967AE828C9",
+    "from": "120363244207952270@g.us",
+    "body": "❌ Download blocked. The content may be unavailable in your region or due to legal restrictions.",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041216893,
+    "expiresAt": 1777214016893
+  },
+  {
+    "id": "ACA732887BAD9343CAD17CC697959F93",
+    "from": "120363244207952270@g.us",
+    "body": ".play patinochema abhurama GraceWave",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041217245,
+    "expiresAt": 1777214017245
+  },
+  {
+    "id": "ACDF99CF2EA640A9C7F1016CA5555028",
+    "from": "120363244207952270@g.us",
+    "body": ".play Tazviona muri mwari GraceWave",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041259154,
+    "expiresAt": 1777214059154
+  },
+  {
+    "id": "A5E1294A91FF65693E1D519A8A3958C1",
+    "from": "120363426705024581@newsletter",
+    "body": "https://host.xwolf.space/available-bots\n\nBrowse bots of your choice and deploy on one click.\nEverything is upto date.\nPromo code available lasting only and hour.\n\n> Silent Wolf",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041269176,
+    "expiresAt": 1777214069176
+  },
+  {
+    "id": "3EB049912D5F56B977C8B2",
+    "from": "120363405201083260@g.us",
+    "body": ".exec pwd",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041325991,
+    "expiresAt": 1777214125991
+  },
+  {
+    "id": "3EB0F76AE0EF62AC2364EA",
+    "from": "120363405201083260@g.us",
+    "body": ".exec ls",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777041373723,
+    "expiresAt": 1777214173723
+  },
+  {
+    "id": "3EB0EDF5A036BD22BCCD93",
+    "from": "120363405201083260@g.us",
+    "body": ".exec git add .",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041397634,
+    "expiresAt": 1777214197634
+  },
+  {
+    "id": "A5D3CA01FE1DE7A1F72465698F988689",
+    "from": "120363421292266825@g.us",
+    "body": "",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777041458581,
+    "expiresAt": 1777214258581
+  },
+  {
+    "id": "A568BFDB6C1E03D8C402D74086F2D69E",
+    "from": "120363407333033583@g.us",
+    "body": "",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777041470963,
+    "expiresAt": 1777214270963
+  },
+  {
+    "id": "3EB0F7EB2432EEB6A1249D",
+    "from": "120363405201083260@g.us",
+    "body": ".exec git push -u origin main",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041495611,
+    "expiresAt": 1777214295611
+  },
+  {
+    "id": "3EB073811329ECB000E37B",
+    "from": "120363244207952270@g.us",
+    "body": "🎵 Downloading: *Tinochema Abhurama – GraceWave x Nyasha Echo | AI Prayer Song*\n⏱ Duration: 3:00",
+    "type": "imageMessage",
+    "timestamp": 1777041633691,
+    "expiresAt": 1777214433691
+  },
+  {
+    "id": "3EB059AE505BE9E08F97DD",
+    "from": "120363244207952270@g.us",
+    "body": "❌ Download blocked. The content may be unavailable in your region or due to legal restrictions.",
+    "type": "extendedTextMessage",
+    "timestamp": 1777041650019,
+    "expiresAt": 1777214450019
   }
 ]
