@@ -38,8 +38,7 @@ async function fetchSessionFromCloud() {
     fs.writeFileSync(credsPath, JSON.stringify(response.data, null, 2));
     console.log("✅ Session synchronized successfully!");
   } catch (err) {
-    console.error("❌ Failed to fetch session:", err.message);
-    process.exit(1);
+    console.warn(`⚠️ Cloud session fetch failed: ${err.message}. Attempting alternative methods...`);
   }
 }
 
