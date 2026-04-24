@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 const pino = require("pino");
 
 const config = require("./config");
@@ -17,6 +18,30 @@ const CREDS_PATH = path.join(__dirname, "sessions", "creds.json");
 
 let isFirstConnect = true;
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
+
+async function fetchSessionFromCloud() {
+  const sessionPath = path.join(__dirname, "sessions");
+  const credsPath = path.join(sessionPath, "creds.json");
+
+  if (fs.existsSync(credsPath)) return;
+  if (!config.SESSION_ID || !config.SESSION_ID.startsWith("HANS-BYTE~")) return;
+
+  console.log("📡 Fetching session from cloud storage...");
+  try {
+    const response = await axios.get(
+      `${config.PAIRING_SERVER_URL}/session/${config.SESSION_ID}`,
+      { timeout: 15000 }
+    );
+
+    if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
+
+    fs.writeFileSync(credsPath, JSON.stringify(response.data, null, 2));
+    console.log("✅ Session synchronized successfully!");
+  } catch (err) {
+    console.error("❌ Failed to fetch session:", err.message);
+    process.exit(1);
+  }
+}
 
 async function startBot() {
   const { restoreSession } = require("./lib/session");
@@ -332,5 +357,5 @@ async function startBot() {
   return conn;
 }
 
-startBot();
+fetchSessionFromCloud().then(() => startBot());
 
