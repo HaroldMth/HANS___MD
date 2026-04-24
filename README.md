@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 <img src="https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png" alt="HANS MD Logo" width="200" style="border-radius: 50%;" />
 
@@ -410,4 +410,3 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 *© 2026 HANS MD — All rights reserved.*
 
 </div>
-]]>
