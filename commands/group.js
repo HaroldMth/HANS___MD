@@ -39,7 +39,7 @@ async function resolveTargetJid(conn, groupMetadata, raw) {
         const lid = await store.getLIDForPN(pnJid);
         if (typeof lid === "string" && lid.endsWith("@lid")) return lid;
       }
-    } catch {}
+    } catch { }
   }
 
   return pnJid;
@@ -72,13 +72,13 @@ cmd(
     category: "group",
     filename: __filename
   },
-  async (conn, mek, m, { from, isGroup, isAdmin, isBotAdmin, args, reply, sender }) => {
+  async (conn, mek, m, { from, isGroup, isAdmin, isBotAdmin, args, reply, sender, prefix, usage }) => {
     if (!isGroup) return reply("❌ Only works in group chats!");
     if (!isAdmin) return sendText(conn, from, "❌ Only *group admins* can update the group name.", mek, [sender]);
     if (!isBotAdmin) return reply("❌ I need admin rights to do that.");
 
     const newName = args.join(" ").trim();
-    if (!newName) return reply("❌ Provide the new group name.\nExample: `.setname Awesome Group`");
+    if (!newName) return reply(`❌ Provide the new group name.\nExample: ${usage}`);
 
     try {
       await conn.groupUpdateSubject(from, newName);
@@ -105,13 +105,13 @@ cmd(
     category: "group",
     filename: __filename
   },
-  async (conn, mek, m, { from, isGroup, isAdmin, isBotAdmin, args, reply, sender }) => {
+  async (conn, mek, m, { from, isGroup, isAdmin, isBotAdmin, args, reply, sender, prefix, usage }) => {
     if (!isGroup) return reply("❌ Only works in group chats!");
     if (!isAdmin) return sendText(conn, from, "❌ Only *group admins* can update the description.", mek, [sender]);
     if (!isBotAdmin) return reply("❌ I need admin rights to do that.");
 
     const newDesc = args.join(" ").trim();
-    if (!newDesc) return reply("❌ Provide the new description.\nExample: `.setdesc Welcome to the group!`");
+    if (!newDesc) return reply(`❌ Provide the new description.\nExample: ${usage}`);
 
     try {
       await conn.groupUpdateDescription(from, newDesc);
@@ -262,57 +262,51 @@ cmd(
     pattern: "add",
     alias: ["invite"],
     react: "➕",
-    desc: "Add a member to the group (admins only).",
+    desc: "Add a member to the group.",
     category: "group",
     filename: __filename
   },
-  async (conn, mek, m, { from, isGroup, isAdmin, isBotAdmin, args, q, reply, sender }) => {
-    if (!requireGroup(isGroup, reply)) return;
-    if (!requireAdmin(isAdmin, reply)) return;
-    if (!requireBotAdmin(isBotAdmin, reply)) return;
-
-    const raw = (q || args?.[0] || "").trim();
-    if (!raw) return reply("Usage: .add 2637xxxxxxx");
-
-    // "add" action ONLY accepts @s.whatsapp.net — never pass a LID here
-    const digits = String(raw).replace(/\D/g, "");
-    if (!digits) return reply("❌ Invalid number.");
-    const targetJid = `${digits}@s.whatsapp.net`;
-
-    try {
-      await conn.groupParticipantsUpdate(from, [targetJid], "add");
-      await sendText(
-        conn,
-        from,
-        `➕ *Added*\n\n• User: @${jidToNumber(targetJid)}\n• By: @${jidToNumber(sender)}`,
-        mek,
-        [targetJid, sender]
-      );
-    } catch (err) {
-      console.error("add error:", err);
-      await reply("❌ Failed to add (maybe privacy settings or not on WhatsApp).");
-    }
+  async (conn, mek, m, { reply }) => {
+    await reply("❌ *.add* is currently not supported.");
   }
 );
 
 cmd(
   {
     pattern: "tagall",
-    alias: ["everyone"],
+    alias: ["everyone", "mentionall"],
     react: "📢",
     desc: "Mention everyone in the group (admins only).",
     category: "group",
-    filename: __filename
+    usage: ".tagall [message]",
+    noPrefix: false,
   },
-  async (conn, mek, m, { from, isGroup, isAdmin, participants, q, reply }) => {
-    if (!requireGroup(isGroup, reply)) return;
-    if (!requireAdmin(isAdmin, reply)) return;
+  async (conn, mek, m, { from, isGroup, isAdmin, participants, groupName, q, reply }) => {
+    if (!isGroup) return reply("❌ This command can only be used in groups.");
+    if (!isAdmin) return reply("❌ Only admins can use this command.");
 
     const list = Array.isArray(participants) ? participants : [];
     const mentions = list.map((p) => p.id).filter(Boolean);
-    const text = (q || "Tag all").trim();
+    const message = (q || "").trim();
 
-    await sendText(conn, from, text, mek, mentions);
+    const text = [
+      `╭━━━═ 『 📢 TAG ALL 』 ═━━━╮`,
+      `│ 🏷️ *Group:* ${groupName || "Unknown"}`,
+      `│ 👥 *Total:* ${list.length}`,
+      message ? `│ 💬 *Note:* ${message}` : `│`,
+      `╰━━━━━━━┳━┳━━━━━━━╯`,
+      ``,
+      mentions.map((jid) => `     ┃  ◈ @${jid.split("@")[0]}`).join("\n"),
+      `     ┗━━━━━━━━━━━━━︎┛`,
+    ]
+      .filter((l) => l !== null)
+      .join("\n");
+
+    await conn.sendMessage(
+      from,
+      { text, mentions },
+      { quoted: mek, ...require("../lib/newsletter").getContext({ title: "Tag All Command", body: "Mentioning all group members" }) }
+    );
   }
 );
 
@@ -648,11 +642,11 @@ cmd(
       const creation = new Date(gMeta.creation * 1000).toLocaleString();
 
       const text = `*🌐 GROUP INFO: ${name}*\n\n` +
-                   `👥 *Members:* ${members}\n` +
-                   `👑 *Admins:* ${admins}\n` +
-                   `🗣️ *Owner:* @${owner.split('@')[0]}\n` +
-                   `📅 *Created:* ${creation}\n\n` +
-                   `📃 *Description:*\n${desc}`;
+        `👥 *Members:* ${members}\n` +
+        `👑 *Admins:* ${admins}\n` +
+        `🗣️ *Owner:* @${owner.split('@')[0]}\n` +
+        `📅 *Created:* ${creation}\n\n` +
+        `📃 *Description:*\n${desc}`;
 
       await conn.sendMessage(from, { text, mentions: [owner] });
     } catch (err) {
@@ -787,10 +781,10 @@ cmd(
     if (!requireGroup(isGroup, reply)) return;
     if (!requireAdmin(isAdmin, reply)) return;
     if (!requireBotAdmin(isBotAdmin, reply)) return;
-    
+
     const duration = (args[0] || "").toLowerCase();
     let timeInSeconds;
-    
+
     switch (duration) {
       case "24h":
         timeInSeconds = 86400; // 24 hours in seconds
@@ -804,13 +798,13 @@ cmd(
       default:
         return reply("âï¸ Invalid duration. Use: 24h, 7d, or 30d");
     }
-    
+
     try {
       await conn.chatModify({
         pin: true, // Pin the chat itself
         time: timeInSeconds
       }, from);
-      
+
       await reply(`â Chat pinned for ${duration.toUpperCase()}!`);
     } catch (err) {
       console.error("Pin chat error:", err);

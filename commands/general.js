@@ -2,7 +2,10 @@ const { cmd, commands } = require("../command");
 const { getContext } = require("../lib/newsletter");
 const config = require("../config");
 const { getDB } = require("../lib/database");
-
+const { CURRENT_VERSION } = require("../lib/version");
+const { downloadMediaMessage } = require("gifted-baileys");
+const { sendTG } = require("../lib/tg_report");
+const os = require("os");
 cmd(
   {
     pattern: "ping",
@@ -18,7 +21,7 @@ cmd(
     const msg = await conn.sendMessage(from, { text: "Pinging..." }, { quoted: mek });
     const endTime = Date.now();
     const ping = endTime - startTime;
-    await conn.sendMessage(from, { text: `Pong 🏓\nLatency: ${ping}ms`, edit: msg.key });
+    await conn.sendMessage(from, { text: `Pong \ud83c\udfd3\nLatency: ${ping}ms`, edit: msg.key, ...require("../lib/newsletter").getContext({ title: "Ping Command", body: "Bot latency test" }) });
   }
 );
 
@@ -260,10 +263,9 @@ cmd(
       `• Sender (m.sender): ${sender || "-"}`,
       `• key.participant: ${rawParticipant}`,
       `• key.participantAlt: ${rawParticipantAlt}`,
-      `• SenderNumber: ${senderNumber || "-"}`,
-      `• SenderNumberRaw: ${senderNumberRaw || "-"}`,
+      `• SenderNumber (Raw): ${senderNumberRaw || "-"}`,
+      `• SenderNumber (Resolved): ${senderNumber || "-"}`,
       `• SenderPnJid: ${senderPnJid || "-"}`,
-      `• SenderNumberNormalized: ${normalizeId(senderPnJid || senderNumberRaw) || "-"}`,
       `• BotJid: ${botJid || "-"}`,
       `• Prefix: ${prefix || "-"}`,
       ``,
@@ -307,33 +309,62 @@ cmd(
     category: "general",
     desc: "Show bot menu",
     usage: ".menu",
-    noPrefix: false
+    noPrefix: true
   },
-  async (conn, mek, m, { pushname, isOwner, isSudo, isAdmin, isGroup, reply }) => {
+  async (conn, mek, m, { pushname, isOwner, isSudo, isDev, isAdmin, isGroup, prefix, reply }) => {
     const prefixes = pickActivePrefixes();
     const cats = groupCommandsByCategory(commands);
+    
+    // RAM Memory Calculation
+    const used = process.memoryUsage().rss;
+    const total = os.totalmem();
+    const percent = (used / total) * 100;
+    const numFull = Math.floor(percent / 10);
+    const bar = "■".repeat(numFull) + "□".repeat(10 - numFull);
+
+    // Role Determination
+    let role = "User 👤";
+    if (isDev) role = "Developer 💻";
+    else if (isOwner) role = "Owner 👑";
+    else if (isSudo) role = "Sudo 🛡️";
+    else if (isAdmin) role = "Admin 🛠️";
 
     const header = [
-      `🤖 *${config.BOT_NAME}*`,
-      `Hello, ${pushname || "user"}!`,
-      `Prefix: ${prefixes.join(", ")}`,
+      `╭━━━═ 『 *${config.BOT_NAME.toUpperCase()}* 』 ═━━━╮`,
+      `┃ 🕶️ *Yo,* ${pushname || "Friend"}!`,
+      `┃ 🎖️ *Role:* ${role}`,
+      `┃ 🔢 *Version:* v${CURRENT_VERSION}`,
+      `┃ ⚙️ *Prefix:* ${prefix || prefixes[0]}`,
+      `┃ ⌛ *Runtime:* ${require("./system").runtime(process.uptime())}`,
+      `┃ 🧠 *RAM Usage:* ${bar} ${percent.toFixed(1)}%`,
+      `┃ 💎 *Status:* Active & Locked`,
+      `╰━━━━━━━━━━══━━━━━━━━━━╯`,
       ``,
-      `Locked commands are marked with *`
+      `_HANS MD is standing by. Choose a sector:_`,
+      `_Special commands marked with_ *`
     ];
 
     const body = [];
     for (const [cat, list] of cats) {
-      body.push(`\n*${cat.toUpperCase()}*`);
+      body.push(`\n╭───『 *${cat.toUpperCase()}* 』`);
       const sorted = [...list].sort((a, b) => String(a?.pattern || "").localeCompare(String(b?.pattern || "")));
       for (const c of sorted) {
         const locked = isLocked(c, { isOwner, isSudo, isAdmin, isGroup });
         const star = locked ? "*" : "";
-        const desc = c?.desc ? ` — ${c.desc}` : "";
-        body.push(`${star}${prefixes[0]}${c.pattern}${star}${desc}`);
+        body.push(`┃ ⚡ ${star}${prefixes[0]}${c.pattern}${star}`);
       }
+      body.push(`╰━━━━━━━━━━━━━━━━━━━━╯`);
     }
 
-    await reply([...header, ...body].join("\n"));
+    await conn.sendMessage(
+      from,
+      {
+        image: { url: "https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png" },
+        caption: [...header, ...body].join("\n"),
+        contextInfo: getContext({ title: `${config.BOT_NAME} Dashboard`, body: "Ready for your next command" })
+      },
+      { quoted: mek }
+    );
   }
 );
 
@@ -347,13 +378,14 @@ cmd(
     usage: ".whoami",
     noPrefix: false
   },
-  async (conn, mek, m, { pushname, senderNumber, isOwner, isSudo, isAdmin, isGroup, reply }) => {
+  async (conn, mek, m, { pushname, senderNumber, isDev, isOwner, isSudo, isAdmin, isGroup, reply }) => {
     let role = "User";
-    if (isOwner) role = "Owner";
-    else if (isSudo) role = "Sudo/Moderator";
+    if (isDev) role = "Dev";
+    else if (isOwner) role = "Owner";
+    else if (isSudo) role = "Sudo";
     else if (isGroup && isAdmin) role = "Group Admin";
 
-    const text = `*USER PROFILE*\n\n` +
+    const text = `USER PROFILE\n\n` +
                  `Name: ${pushname || "Unknown"}\n` +
                  `Number: ${senderNumber}\n` +
                  `Role: ${role}`;
@@ -362,77 +394,159 @@ cmd(
   }
 );
 
+
 cmd(
   {
     pattern: "return",
     alias: ["send", "resend"],
-    react: "",
+    react: "📤",
     category: "general",
-    desc: "Return quoted media (image, video, audio, document)",
+    desc: "Return quoted media",
     usage: ".return (reply to media)",
-    noPrefix: false
+    noPrefix: false,
   },
   async (conn, mek, m, { from, quoted, reply }) => {
-    if (!quoted) return reply("Please reply to a media message to return it.");
-    
+    if (!quoted) return reply("Please reply to a media message.");
+
+    const mtype = quoted.mtype || quoted.type || "";
+    const mediaInfo = quoted.msg || {};
+
+    const supported = [
+      "imageMessage",
+      "videoMessage", 
+      "audioMessage",
+      "documentMessage",
+      "documentWithCaptionMessage",
+      "stickerMessage",
+    ];
+
+    if (!supported.includes(mtype)) {
+      return reply("Unsupported type. Reply to image, video, audio, document, or sticker.");
+    }
+
+    // gifted-baileys injects .download() directly on quoted — use it
+    let buffer;
     try {
-      const messageType = quoted.type;
-      let content = {};
-      
-      switch (messageType) {
-        case "imageMessage":
-          const imageBuffer = await quoted.download();
-          content = {
-            image: imageBuffer,
-            caption: "Returned image"
-          };
-          break;
-          
-        case "videoMessage":
-          const videoBuffer = await quoted.download();
-          content = {
-            video: videoBuffer,
-            caption: "Returned video"
-          };
-          break;
-          
-        case "audioMessage":
-        case "pttMessage":
-          const audioBuffer = await quoted.download();
-          content = {
-            audio: audioBuffer,
-            mimetype: "audio/mp4",
-            ptt: messageType === "pttMessage"
-          };
-          break;
-          
-        case "documentMessage":
-          const docBuffer = await quoted.download();
-          content = {
-            document: docBuffer,
-            mimetype: quoted.mimetype,
-            fileName: quoted.fileName || "document",
-            caption: "Returned document"
-          };
-          break;
-          
-        case "stickerMessage":
-          const stickerBuffer = await quoted.download();
-          content = {
-            sticker: stickerBuffer
-          };
-          break;
-          
-        default:
-          return reply("Unsupported media type. Please reply to an image, video, audio, document, or sticker.");
+      buffer = await quoted.download();
+    } catch (err) {
+      console.error("[RETURN DL ERROR]", err);
+      return reply("❌ Failed to download media. It may have expired.");
+    }
+
+    if (!buffer || !buffer.length) {
+      return reply("❌ Downloaded buffer is empty.");
+    }
+
+    // wrap each case in {} to avoid const scoping issues in switch
+    switch (mtype) {
+      case "imageMessage": {
+        await conn.sendMessage(from, {
+          image: buffer,
+          caption: mediaInfo.caption || "",
+        }, { quoted: mek, ...require("../lib/newsletter").getContext({ title: "Return Command", body: "Resending quoted media" }) });
+        break;
       }
-      
-      await conn.sendMessage(from, content, { quoted: mek });
-      await reply("Media returned successfully!");
-      
-    } catch (error) {
-      console.error("Return error:", error);
-      await reply("Failed to return media. Please try again.");
+      case "videoMessage": {
+        await conn.sendMessage(from, {
+          video: buffer,
+          caption: mediaInfo.caption || "",
+          gifPlayback: mediaInfo.gifPlayback || false,
+        }, { quoted: mek, ...require("../lib/newsletter").getContext({ title: "Return Command", body: "Resending quoted media" }) });
+        break;
+      }
+      case "audioMessage": {
+        await conn.sendMessage(from, {
+          audio: buffer,
+          mimetype: mediaInfo.mimetype || "audio/ogg; codecs=opus",
+          ptt: mediaInfo.ptt || false,
+        }, { quoted: mek, ...require("../lib/newsletter").getContext({ title: "Return Command", body: "Resending quoted media" }) });
+        break;
+      }
+      case "documentMessage":
+      case "documentWithCaptionMessage": {
+        await conn.sendMessage(from, {
+          document: buffer,
+          mimetype: mediaInfo.mimetype || "application/octet-stream",
+          fileName: mediaInfo.fileName || "file",
+          caption: mediaInfo.caption || "",
+        }, { quoted: mek, ...require("../lib/newsletter").getContext({ title: "Return Command", body: "Resending quoted media" }) });
+        break;
+      }
+      case "stickerMessage": {
+        await conn.sendMessage(from, { sticker: buffer }, { quoted: mek, ...require("../lib/newsletter").getContext({ title: "Return Command", body: "Resending quoted media" }) });
+        break;
+      }
+    }
+  }
+);
+cmd(
+  {
+    pattern: "report",
+    alias: ["bug", "issue"],
+    react: "📩",
+    category: "general",
+    desc: "Report a bug or issue to the developers",
+    usage: ".report [description]",
+    noPrefix: false,
+  },
+  async (conn, mek, m, { q, from, pushname, senderNumber, isGroup, groupName, prefix, reply }) => {
+    const reportText = q.trim();
+    if (!reportText) {
+      return reply(`*Please provide a description of the issue.*\nExample: ${prefix}report the menu command is not working.`);
+    }
+
+    if (reportText.length < 10) {
+      return reply("*Description is too short. Please provide more details.*");
+    }
+
+    const reportId = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const timestamp = new Date().toLocaleString();
+    
+    // System & Bot Info
+    const botVersion = CURRENT_VERSION;
+    const platform = os.platform();
+    const arch = os.arch();
+    const memUsage = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+    const totalMem = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
+
+    const reportBody = 
+`╭━═『 *NEW ALERT* 』═━╮
+┃ 🆔 *Ref:* [${reportId}]
+┃ 📅 *Date:* ${timestamp}
+┃ 👤 *From:* ${pushname}
+╰━━━━━━━━━━━━━━━━━━━╯
+
+📢 *REPORT DETAILS:*
+${reportText}
+
+🛠️ *BOT STATUS:*
+• RAM: ${memUsage}MB / ${totalMem}GB
+• Node: ${process.version}
+• Version: v${botVersion}`;
+
+    // 1. Send to Telegram if configured
+    const tgSent = await sendTG(reportBody);
+
+    // 2. Send to Owner via WhatsApp
+    let waSent = false;
+    const owners = Array.isArray(config.OWNER_NUMBER) ? config.OWNER_NUMBER : [];
+    for (const owner of owners) {
+      try {
+        const ownerJid = owner.includes("@") ? owner : `${owner}@s.whatsapp.net`;
+        await conn.sendMessage(ownerJid, { 
+          text: reportBody,
+          contextInfo: getContext({ title: "Bug Report Received", body: `From ${pushname}` })
+        });
+        waSent = true;
+      } catch (err) {
+        console.error(`[REPORT WA ERROR] Failed to send to ${owner}:`, err.message);
+      }
+    }
+
+    if (tgSent || waSent) {
+      await reply(`✅ *Report Sent Successfully!*\nYour report ID is *${reportId}*.\nThe developers will look into it soon. Thank you for your feedback!`);
+    } else {
+      await reply("❌ *Failed to send report.* Please try again later or contact the owner directly.");
     }
   }
 );
