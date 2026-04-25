@@ -141,7 +141,7 @@ cmd(
         for (const file of filesToUpdate) {
           try {
             const url = `${repoRaw}/${file}`;
-            const { data } = await axios.get(url, { timeout: 15000 });
+            const { data } = await axios.get(url, { timeout: 15000, responseType: "text" });
             const localPath = path.join(process.cwd(), file);
             const dir = path.dirname(localPath);
             if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
