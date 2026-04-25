@@ -6958,5 +6958,109 @@
     "type": "extendedTextMessage",
     "timestamp": 1777074467812,
     "expiresAt": 1777247267812
+  },
+  {
+    "id": "A535A4669432C1FD0179377344B152F1",
+    "from": "237694668970@s.whatsapp.net",
+    "body": "",
+    "type": "protocolMessage",
+    "timestamp": 1777074941444,
+    "expiresAt": 1777247741444
+  },
+  {
+    "id": "3EB0C0496961E58BF7D9D8",
+    "from": "237694668970@s.whatsapp.net",
+    "body": "✌️",
+    "type": "reactionMessage",
+    "timestamp": 1777074942079,
+    "expiresAt": 1777247742079
+  },
+  {
+    "id": "A54FA9AA305AF2EFA9C2B29E3F856021",
+    "from": "237694668970@s.whatsapp.net",
+    "body": "",
+    "type": "protocolMessage",
+    "timestamp": 1777074948564,
+    "expiresAt": 1777247748564
+  },
+  {
+    "id": "A5F364608FB2FF80661F1FA8818864A4",
+    "from": "120363422919517315@g.us",
+    "body": ".menu",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777075184017,
+    "expiresAt": 1777247984017
+  },
+  {
+    "id": "ILSYM-ECE1F48FB4F8",
+    "from": "120363422919517315@g.us",
+    "body": "",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777075188053,
+    "expiresAt": 1777247988053
+  },
+  {
+    "id": "ILSYM-AB10C4D3FA40",
+    "from": "120363422919517315@g.us",
+    "body": "",
+    "type": "buttonsMessage",
+    "timestamp": 1777075190666,
+    "expiresAt": 1777247990666
+  },
+  {
+    "id": "A5638B3F838038674ACEFD3176439EEF",
+    "from": "120363422919517315@g.us",
+    "body": ".generalcommands",
+    "type": "messageContextInfo",
+    "timestamp": 1777075219701,
+    "expiresAt": 1777248019701
+  },
+  {
+    "id": "A5EAD186A501875D32D3D62F1FFD36AF",
+    "from": "120363422919517315@g.us",
+    "body": ".general commands",
+    "type": "extendedTextMessage",
+    "timestamp": 1777075275659,
+    "expiresAt": 1777248075659
+  },
+  {
+    "id": "ACE4C96B1C4DF26428C17887D83ECC89",
+    "from": "120363422919517315@g.us",
+    "body": "",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777075567559,
+    "expiresAt": 1777248367559
+  },
+  {
+    "id": "ACFE5820B75500701B9F9CC1BC6573CA",
+    "from": "120363422919517315@g.us",
+    "body": "What's guy",
+    "type": "extendedTextMessage",
+    "timestamp": 1777075579948,
+    "expiresAt": 1777248379948
+  },
+  {
+    "id": "A5EFD598071B800AB469C3EB1E6BAEF7",
+    "from": "120363422919517315@g.us",
+    "body": ".ping",
+    "type": "extendedTextMessage",
+    "timestamp": 1777075644635,
+    "expiresAt": 1777248444635
+  },
+  {
+    "id": "A5D07E46B298159AAC0F1C7A842BCB5E",
+    "from": "120363422919517315@g.us",
+    "body": "Sharp",
+    "type": "extendedTextMessage",
+    "timestamp": 1777075657495,
+    "expiresAt": 1777248457495
+  },
+  {
+    "id": "ILSYM-053B14204212",
+    "from": "120363422919517315@g.us",
+    "body": "",
+    "type": "senderKeyDistributionMessage",
+    "timestamp": 1777075664142,
+    "expiresAt": 1777248464142
   }
 ]
