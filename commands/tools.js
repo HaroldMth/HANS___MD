@@ -124,14 +124,25 @@ cmd({
     );
 
     const imageUrl = await uploadToCatbox(buffer, hasImage.mimetype);
-    const url = `https://apis.davidcyril.name.ng/removebg?url=${encodeURIComponent(imageUrl)}`;
-    
-    // Result is an image
-    await conn.sendMessage(from, {
-      image: { url: url },
-      caption: `╭━═『 *BG REMOVED* 』━╮\n┃ ✂️ *Mode:* Transparent\n╰━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
-      contextInfo: getContext({ title: "Visual Clean", body: "Background Decoupled" })
-    }, { quoted: mek });
+    const primaryUrl = `https://apis.davidcyril.name.ng/removebg?url=${encodeURIComponent(imageUrl)}`;
+
+    try {
+      await conn.sendMessage(from, {
+        image: { url: primaryUrl },
+        caption: `╭━═『 *BG REMOVED* 』━╮\n┃ ✂️ *Mode:* Transparent\n╰━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
+        contextInfo: getContext({ title: "Visual Clean", body: "Background Decoupled" })
+      }, { quoted: mek });
+    } catch (primaryErr) {
+      console.error("RMBG PRIMARY FAILED, TRYING FALLBACK:", primaryErr.message);
+      const fallbackUrl = `https://api.giftedtech.co.ke/api/tools/removebg?apikey=gifted&url=${encodeURIComponent(imageUrl)}`;
+      const { data } = await axios.get(fallbackUrl);
+      if (!data.success || !data.result?.image_url) throw new Error("Fallback failed");
+      await conn.sendMessage(from, {
+        image: { url: data.result.image_url },
+        caption: `╭━═『 *BG REMOVED* 』━╮\n┃ ✂️ *Mode:* Transparent\n┃ 📐 *Size:* ${data.result.original_width}x${data.result.original_height}\n╰━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
+        contextInfo: getContext({ title: "Visual Clean", body: "Background Decoupled" })
+      }, { quoted: mek });
+    }
 
   } catch (err) {
     console.error("RMBG ERROR:", err);
@@ -517,5 +528,427 @@ cmd({
   } catch (err) {
     console.error("BIBLE ERROR:", err);
     reply("❌ Bible core retrieval failed.");
+  }
+});
+
+// --- GIFTEDTECH TOOLS ---
+
+cmd({
+  pattern: "encryptv3",
+  alias: ["jsencrypt", "obfv3"],
+  react: "🔒",
+  category: "tools",
+  desc: "Encrypt JavaScript code v3",
+  usage: ".encryptv3 [code]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Provide JS code to encrypt. Usage: .encryptv3 console.log('hello');");
+
+    const url = `https://api.giftedtech.co.ke/api/tools/encryptv3?apikey=gifted&code=${encodeURIComponent(q)}`;
+    const { data } = await axios.get(url);
+
+    if (!data.success || !data.result) return reply("❌ Encryption failed.");
+
+    const txt = `
+╭━═『 *JS ENCRYPTED V3* 』━╮
+┃ 🔒 *Method:* High Cipher
+╰━━━━━━━━━━━━━━━━━━╯
+
+\`\`\`javascript
+${data.result.encrypted_code || data.result}
+\`\`\`
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+
+    await reply(txt, { title: "Cipher Core V3", body: "JavaScript Protected" });
+  } catch (err) {
+    console.error("ENCRYPTV3 ERROR:", err);
+    reply("❌ Encryption V3 failure.");
+  }
+});
+
+cmd({
+  pattern: "htmlobfuscate",
+  alias: ["htmlenc", "htmlobf"],
+  react: "🛡️",
+  category: "tools",
+  desc: "Obfuscate HTML code",
+  usage: ".htmlobfuscate [html]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Provide HTML to obfuscate. Usage: .htmlobfuscate <h1>Hello</h1>");
+
+    const url = `https://api.giftedtech.co.ke/api/tools/htmlobfuscate?apikey=gifted&html=${encodeURIComponent(q)}`;
+    const { data } = await axios.get(url);
+
+    if (!data.success || !data.result?.obfuscated) return reply("❌ HTML obfuscation failed.");
+
+    let obfuscated = data.result.obfuscated;
+    // Remove gifted tech prefix comment if present
+    obfuscated = obfuscated.replace(/<!--\s*GIFTED-TECH@?\d{4}(-\d{4})?\s*-->/gi, "").trim();
+
+    const txt = `
+╭━═『 *HTML OBFUSCATED* 』━╮
+┃ 📏 *Original:* ${data.result.originalLength} chars
+┃ 🔐 *Obfuscated:* ${data.result.length} chars
+╰━━━━━━━━━━━━━━━━━━╯
+
+\`\`\`html
+${obfuscated.substring(0, 3000)}
+\`\`\`
+${obfuscated.length > 3000 ? "\n... (truncated)" : ""}
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+
+    await reply(txt, { title: "HTML Shield", body: "Code obfuscated successfully" });
+  } catch (err) {
+    console.error("HTMLOBF ERROR:", err);
+    reply("❌ HTML obfuscation failure.");
+  }
+});
+
+cmd({
+  pattern: "base64",
+  alias: ["b64"],
+  react: "🔡",
+  category: "tools",
+  desc: "Base64 encode or decode text",
+  usage: ".base64 encode [text] or .base64 decode [text]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Usage: .base64 encode hello world\nOr: .base64 decode aGVsbG8=");
+
+    const args = q.trim().split(" ");
+    const mode = args[0].toLowerCase();
+    const text = args.slice(1).join(" ");
+
+    if (!["encode", "decode"].includes(mode)) {
+      return reply("❌ Usage: .base64 encode [text] or .base64 decode [text]");
+    }
+    if (!text) return reply("❌ Please provide text to encode/decode.");
+
+    let result;
+    if (mode === "encode") {
+      result = Buffer.from(text).toString("base64");
+    } else {
+      result = Buffer.from(text, "base64").toString("utf8");
+    }
+
+    const txt = `
+╭━═『 *BASE64 ${mode.toUpperCase()}* 』━╮
+┃ 📄 *Input:* ${text.substring(0, 50)}${text.length > 50 ? "..." : ""}
+╰━━━━━━━━━━━━━━━━━━╯
+
+\`\`\`
+${result}
+\`\`\`
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+
+    await reply(txt, { title: `Base64 ${mode}`, body: "Operation successful" });
+  } catch (err) {
+    console.error("BASE64 ERROR:", err);
+    reply("❌ Base64 operation failed. Make sure decode input is valid base64.");
+  }
+});
+
+cmd({
+  pattern: "readqr",
+  alias: ["qrread", "qrdetect"],
+  react: "📷",
+  category: "tools",
+  desc: "Read QR code from image URL",
+  usage: ".readqr [image_url] (or reply to image)",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    let imageUrl = q;
+    if (!imageUrl) {
+      const isQuoted = !!(mek.message?.extendedTextMessage?.contextInfo?.quotedMessage);
+      const mediaMsg = isQuoted ? mek.message.extendedTextMessage.contextInfo.quotedMessage : mek.message;
+      const hasImage = mediaMsg?.imageMessage;
+      if (!hasImage) return reply("❌ Please provide an image URL or reply to an image.");
+      const buffer = await downloadMediaMessage(
+        isQuoted ? { key: mek.message.extendedTextMessage.contextInfo, message: mediaMsg } : mek,
+        "buffer", {}, { reuploadRequest: conn.updateMediaMessage }
+      );
+      imageUrl = await uploadToCatbox(buffer, hasImage.mimetype);
+    }
+
+    const url = `https://api.giftedtech.co.ke/api/tools/readqr?apikey=gifted&url=${encodeURIComponent(imageUrl)}`;
+    const { data } = await axios.get(url);
+
+    if (!data.success || !data.result?.qrcode_data) return reply("❌ No QR code detected.");
+
+    const txt = `
+╭━═『 *QR CODE DATA* 』━╮
+┃ 📷 *Detected:* Success
+╰━━━━━━━━━━━━━━━━━━╯
+
+${data.result.qrcode_data}
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+
+    await reply(txt, { title: "QR Scanner", body: "Data extracted successfully" });
+  } catch (err) {
+    console.error("READQR ERROR:", err);
+    reply("❌ QR reading failed.");
+  }
+});
+
+cmd({
+  pattern: "ttp",
+  alias: ["texttopicture", "txtpic"],
+  react: "🖼️",
+  category: "tools",
+  desc: "Convert text to picture",
+  usage: ".ttp [text]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Provide text to convert. Usage: .tp Gifted Tech");
+
+    const url = `https://api.giftedtech.co.ke/api/tools/ttp?apikey=gifted&query=${encodeURIComponent(q)}`;
+    const { data } = await axios.get(url);
+
+    if (!data.success || !data.image_url) return reply("❌ Text-to-picture failed.");
+
+    await conn.sendMessage(from, {
+      image: { url: data.image_url },
+      caption: `╭━═ 『 *TEXT TO PICTURE* 』 ═━╮\n┃ 📝 *Text:* ${q}\n╰━━━━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
+      contextInfo: getContext({ title: "TTP Engine", body: "Text rendered to image" })
+    }, { quoted: mek });
+  } catch (err) {
+    console.error("TTP ERROR:", err);
+    reply("❌ Text-to-picture generation failed.");
+  }
+});
+
+cmd({
+  pattern: "fancy",
+  alias: ["fancyv2", "fancytext"],
+  react: "✨",
+  category: "tools",
+  desc: "Convert text to fancy fonts (list all or pick by index)",
+  usage: ".fancy [text] or .fancy [index] [text]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Usage: .fancy Hello World (lists all styles)\nOr: .fancy 10 Hello World (picks style #10)");
+
+    const args = q.trim().split(" ");
+    const maybeIndex = parseInt(args[0], 10);
+    let index = null;
+    let text = q;
+
+    if (!isNaN(maybeIndex) && args.length > 1) {
+      index = maybeIndex;
+      text = args.slice(1).join(" ");
+    }
+
+    const url = `https://api.giftedtech.co.ke/api/tools/fancyv2?apikey=gifted&text=${encodeURIComponent(text)}`;
+    const { data } = await axios.get(url);
+
+    if (!data.success || !Array.isArray(data.results)) return reply("❌ Fancy text generation failed.");
+
+    if (index !== null && data.results[index - 1]) {
+      const selected = data.results[index - 1];
+      const txt = `
+╭━═『 *${selected.name}* 』━╮
+┃ ✨ *Style:* ${index}
+╰━━━━━━━━━━━━━━━━━━╯
+
+${selected.result}
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+      await reply(txt, { title: `Fancy Style ${index}`, body: selected.name });
+    } else {
+      let list = data.results.map((r, i) => `${i + 1}. ${r.name}\n${r.result}`).join("\n\n");
+      if (list.length > 3500) {
+        list = data.results.slice(0, 20).map((r, i) => `${i + 1}. ${r.name}\n${r.result}`).join("\n\n") + "\n\n... (truncated)";
+      }
+      const txt = `
+╭━═『 *FANCY TEXT STYLES* 』━╮
+┃ 📝 *Text:* ${text}
+┃ 📋 *Styles:* ${data.results.length}
+╰━━━━━━━━━━━━━━━━━━╯
+
+${list}
+
+_Use \`.fancy [index] ${text}\` to pick a specific style._
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+      await reply(txt, { title: "Fancy Text List", body: "Choose your style" });
+    }
+  } catch (err) {
+    console.error("FANCY ERROR:", err);
+    reply("❌ Fancy text generation failed.");
+  }
+});
+
+cmd({
+  pattern: "proxy",
+  alias: ["proxies", "proxieslist"],
+  react: "🌐",
+  category: "tools",
+  desc: "Get a list of working proxies",
+  usage: ".proxy",
+  noPrefix: false,
+}, async (conn, mek, m, { from, reply }) => {
+  try {
+    const url = "https://api.giftedtech.co.ke/api/tools/proxy?apikey=gifted";
+    const { data } = await axios.get(url);
+
+    if (!data.success || !Array.isArray(data.results)) return reply("❌ Failed to fetch proxies.");
+
+    const proxies = data.results.slice(0, 15);
+    const list = proxies.map((p, i) =>
+      `${i + 1}. ${p.ip}:${p.port} (${p.code}) - ${p.anonymity} | HTTPS: ${p.https}`
+    ).join("\n");
+
+    const txt = `
+╭━═『 *PROXY LIST* 』━╮
+┃ 🌐 *Total:* ${data.results.length} proxies
+┃ 📋 *Showing:* First ${proxies.length}
+╰━━━━━━━━━━━━━━━━━━╯
+
+${list}
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+
+    await reply(txt, { title: "Proxy Hub", body: "Fresh proxies delivered" });
+  } catch (err) {
+    console.error("PROXY ERROR:", err);
+    reply("❌ Proxy fetch failed.");
+  }
+});
+
+cmd({
+  pattern: "web2zip",
+  alias: ["zipweb", "saveweb"],
+  react: "📦",
+  category: "tools",
+  desc: "Download a website as ZIP archive",
+  usage: ".web2zip [url]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Provide a website URL. Usage: .web2zip https://google.com");
+
+    const targetUrl = q.startsWith("http") ? q : `https://${q}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/web2zip?apikey=gifted&url=${encodeURIComponent(targetUrl)}`;
+    const { data } = await axios.get(url);
+
+    if (!data.success || !data.result?.download_url) return reply("❌ Failed to archive website.");
+
+    const r = data.result;
+    const txt = `
+╭━═『 *WEB ARCHIVE READY* 』━╮
+┃ 🌐 *Site:* ${r.siteUrl}
+┃ 📁 *Files:* ${r.copiedFilesAmount}
+┃ 📦 *Type:* ${r.mimetype}
+╰━━━━━━━━━━━━━━━━━━╯
+
+🔗 *Download:* ${r.download_url}
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+
+    await reply(txt, { title: "Web2Zip", body: "Website archived successfully" });
+  } catch (err) {
+    console.error("WEB2ZIP ERROR:", err);
+    reply("❌ Web2Zip failed.");
+  }
+});
+
+cmd({
+  pattern: "emojimix",
+  alias: ["mixemoji", "emojiblend"],
+  react: "🎭",
+  category: "tools",
+  desc: "Mix two emojis into one image",
+  usage: ".emojimix [emoji1] [emoji2]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Provide two emojis. Usage: .emojimix 😂 🙄");
+
+    const args = q.trim().split(/\s+/);
+    if (args.length < 2) return reply("❌ Please provide two emojis separated by space.");
+
+    const [emoji1, emoji2] = [args[0], args[1]];
+    const url = `https://api.giftedtech.co.ke/api/tools/emojimix?apikey=gifted&emoji1=${encodeURIComponent(emoji1)}&emoji2=${encodeURIComponent(emoji2)}`;
+
+    await conn.sendMessage(from, {
+      image: { url: url },
+      caption: `╭━═ 『 *EMOJI MIX* 』 ═━╮\n┃ 😂 *Emoji 1:* ${emoji1}\n┃ 🙄 *Emoji 2:* ${emoji2}\n╰━━━━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
+      contextInfo: getContext({ title: "Emoji Mixer", body: "Blend complete" })
+    }, { quoted: mek });
+  } catch (err) {
+    console.error("EMOJIMIX ERROR:", err);
+    reply("❌ Emoji mix failed. Try different emojis.");
+  }
+});
+
+cmd({
+  pattern: "carbon",
+  alias: ["codeimage", "codeshot"],
+  react: "💻",
+  category: "tools",
+  desc: "Generate beautiful code screenshot",
+  usage: ".carbon [code]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Provide code to screenshot. Usage: .carbon console.log('hello world')");
+
+    const url = `https://api.giftedtech.co.ke/api/tools/carbon?apikey=gifted&code=${encodeURIComponent(q)}`;
+    const { data } = await axios.get(url);
+
+    if (!data.success || !data.result?.image) return reply("❌ Carbon screenshot failed.");
+
+    const r = data.result;
+    await conn.sendMessage(from, {
+      image: { url: r.image },
+      caption: `╭━═ 『 *CARBON SHOT* 』 ═━╮\n┃ 🖋️ *Font:* ${r.font}\n┃ 🎨 *Theme:* ${r.theme}\n╰━━━━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
+      contextInfo: getContext({ title: "Carbon Code", body: "Screenshot generated" })
+    }, { quoted: mek });
+  } catch (err) {
+    console.error("CARBON ERROR:", err);
+    reply("❌ Carbon screenshot failed.");
+  }
+});
+
+cmd({
+  pattern: "createqr",
+  alias: ["genqr", "makeqr"],
+  react: "📱",
+  category: "tools",
+  desc: "Generate a QR code from text",
+  usage: ".createqr [text]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Provide text for QR code. Usage: .createqr Hello World");
+
+    const url = `https://api.giftedtech.co.ke/api/tools/createqr?apikey=gifted&query=${encodeURIComponent(q)}`;
+    await conn.sendMessage(from, {
+      image: { url: url },
+      caption: `╭━═ 『 *QR CREATED* 』 ═━╮\n┃ 📱 *Data:* ${q}\n╰━━━━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
+      contextInfo: getContext({ title: "QR Generator", body: "Code generated successfully" })
+    }, { quoted: mek });
+  } catch (err) {
+    console.error("CREATEQR ERROR:", err);
+    reply("❌ QR code generation failed.");
   }
 });

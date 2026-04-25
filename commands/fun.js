@@ -203,3 +203,70 @@ ${data.fact}
     reply("❌ Error fetching cat fact.");
   }
 });
+
+// --- GIFTEDTECH FUN COMMANDS ---
+
+cmd({
+  pattern: "joke",
+  alias: ["jokes", "funny"],
+  react: "😂",
+  category: "fun",
+  desc: "Get a random joke",
+  usage: ".joke",
+  noPrefix: false,
+}, async (conn, mek, m, { from, reply }) => {
+  try {
+    const url = "https://api.giftedtech.co.ke/api/fun/jokes?apikey=gifted";
+    const { data } = await axios.get(url);
+
+    if (!data.success || !data.result) return reply("❌ Failed to fetch joke.");
+
+    const r = data.result;
+    const txt = `
+╭━═ 『 *${r.type?.toUpperCase() || "RANDOM"} JOKE* 』 ═━╮
+┃ 🎤 *Setup:* ${r.setup}
+╰━━━━━━━━━━━━━━━━━━╯
+
+😂 *Punchline:* ${r.punchline}
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+
+    await reply(txt, { title: "Joke Machine", body: "Laughter guaranteed" });
+  } catch (err) {
+    console.error("JOKE ERROR:", err);
+    reply("❌ Joke machine is broken.");
+  }
+});
+
+cmd({
+  pattern: "pickupline",
+  alias: ["pickup", "flirt"],
+  react: "💘",
+  category: "fun",
+  desc: "Get a random pickup line",
+  usage: ".pickupline",
+  noPrefix: false,
+}, async (conn, mek, m, { from, reply }) => {
+  try {
+    const url = "https://api.giftedtech.co.ke/api/fun/pickupline?apikey=gifted";
+    const { data } = await axios.get(url);
+
+    if (!data.success || !data.result) return reply("❌ Failed to fetch pickup line.");
+
+    const txt = `
+╭━═ 『 *PICKUP LINE* 』 ═━╮
+┃ 💘 *Line:*
+╰━━━━━━━━━━━━━━━━━━╯
+
+${data.result}
+
+🚀 *${config.BOT_NAME}*
+`.trim();
+
+    await reply(txt, { title: "Pickup Core", body: "Smooth lines delivered" });
+  } catch (err) {
+    console.error("PICKUP ERROR:", err);
+    reply("❌ Pickup line generator failed.");
+  }
+});

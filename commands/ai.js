@@ -145,8 +145,34 @@ cmd({
   noPrefix: false,
 }, async (conn, mek, m, { q, reply }) => {
   const query = q || "Hi";
-  const url = `https://apis.davidcyril.name.ng/ai/gpt4?text=${encodeURIComponent(query)}`;
-  await handleAI(url, reply, "GPT-4", null, conn, mek);
+  const primaryUrl = `https://apis.davidcyril.name.ng/ai/gpt4?text=${encodeURIComponent(query)}`;
+  const fallbackUrl = `https://api.giftedtech.co.ke/api/ai/gpt4o?apikey=gifted&q=${encodeURIComponent(query)}`;
+
+  try {
+    await handleAI(primaryUrl, reply, "GPT-4", null, conn, mek);
+  } catch (err) {
+    console.error("GPT4 PRIMARY FAILED, TRYING FALLBACK:", err.message);
+    try {
+      if (conn && mek) {
+        await conn.sendMessage(mek.key.remoteJid, { react: { text: "🔄", key: mek.key } });
+      }
+      const { data } = await axios.get(fallbackUrl);
+      const response = data.result || data.response || data.message || data.text;
+      if (!response) throw new Error("No response from fallback");
+      const caption = `╭━═『 *GPT-4O* 』═━╮\n\n${response.trim()}\n\n╰━━━━━━━━━━━━━━━━━━╯\n\n*HANS MD — Keeping it sharp.* 😎`;
+      await reply(caption, {
+        title: "GPT-4O Assistant",
+        body: "Intelligence Retrieval Successful",
+        thumb: "https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png"
+      });
+      if (conn && mek) {
+        await conn.sendMessage(mek.key.remoteJid, { react: { text: "✅", key: mek.key } });
+      }
+    } catch (fallbackErr) {
+      console.error("GPT4 FALLBACK FAILED:", fallbackErr);
+      reply(`❌ *Failed to contact GPT-4.* Try again later.`);
+    }
+  }
 });
 
 cmd({
@@ -366,5 +392,69 @@ cmd({
   } catch (err) {
     console.error("FLUX ERROR:", err);
     reply("❌ Error with Flux generation.");
+  }
+});
+
+// --- GIFTEDTECH IMAGE GENERATORS ---
+
+cmd({
+  pattern: "magicstudio",
+  alias: ["magic", "ms"],
+  react: "🪄",
+  category: "ai",
+  desc: "Generate image using MagicStudio AI",
+  usage: ".magicstudio [prompt]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    const query = q || "a beautiful sunset over mountains";
+    await conn.sendMessage(mek.key.remoteJid, { react: { text: "🪄", key: mek.key } });
+    await reply(`╭━═『 *MAGIC STUDIO* 』━╮\n┃ 📡 *Task:* Summoning Magic...\n┃ ⏳ *Status:* Rendering Image\n╰━━━━━━━━━━━━━━━━╯`);
+
+    const url = `https://api.giftedtech.co.ke/api/ai/magicstudio?apikey=gifted&prompt=${encodeURIComponent(query)}`;
+    await conn.sendMessage(from, {
+      image: { url: url },
+      caption: `╭━═ 『 *MAGIC READY* 』 ═━╮\n┃ 🎨 *Prompt:* ${query}\n╰━━━━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
+      contextInfo: getContext({ title: "MagicStudio AI", body: "Image rendered successfully" })
+    }, { quoted: mek });
+
+    await conn.sendMessage(mek.key.remoteJid, { react: { text: "✅", key: mek.key } });
+  } catch (err) {
+    console.error("MAGICSTUDIO ERROR:", err);
+    reply("❌ MagicStudio generation failed.");
+  }
+});
+
+cmd({
+  pattern: "txt2img",
+  alias: ["t2i", "text2image"],
+  react: "🖼️",
+  category: "ai",
+  desc: "Generate image from text using txt2img AI",
+  usage: ".txt2img [prompt]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    const query = q || "A beautiful sunset over mountains";
+    await conn.sendMessage(mek.key.remoteJid, { react: { text: "🖼️", key: mek.key } });
+    await reply(`╭━═『 *TXT2IMG* 』━╮\n┃ 📡 *Task:* Generating Image...\n┃ ⏳ *Status:* AI Rendering\n╰━━━━━━━━━━━━━━━━╯`);
+
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/txt2img?apikey=gifted&prompt=${encodeURIComponent(query)}`;
+    const { data } = await axios.get(apiUrl);
+
+    if (!data.success || !data.result?.url) {
+      return reply("❌ Failed to generate image via txt2img.");
+    }
+
+    await conn.sendMessage(from, {
+      image: { url: data.result.url },
+      caption: `╭━═ 『 *IMAGE READY* 』 ═━╮\n┃ 🎨 *Prompt:* ${data.result.prompt || query}\n╰━━━━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,
+      contextInfo: getContext({ title: "Txt2Img AI", body: "Image generated successfully" })
+    }, { quoted: mek });
+
+    await conn.sendMessage(mek.key.remoteJid, { react: { text: "✅", key: mek.key } });
+  } catch (err) {
+    console.error("TXT2IMG ERROR:", err);
+    reply("❌ txt2img generation failed.");
   }
 });

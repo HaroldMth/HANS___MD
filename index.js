@@ -9,9 +9,52 @@ const handler = require("./lib/handler");
 const { loadCommands } = require("./lib/loader");
 const { cleanExpired, storeMessage, getStoredMessage, getDB } = require("./lib/database");
 const { CURRENT_VERSION } = require("./lib/version");
+const { sendTG } = require("./lib/tg_report");
 
 const logger = pino({ level: "silent" });
 let presenceInterval = null; // Global to manage single interval
+
+// ─── FATAL ERROR TELEGRAM REPORTING ───
+function formatCrashReport(type, error) {
+  const ts = new Date().toISOString();
+  const stack = error.stack || String(error);
+  return `
+🚨 *HANS-MD FATAL ERROR* 🚨
+
+*Type:* \`${type}\`
+*Time:* ${ts}
+*Version:* v${CURRENT_VERSION}
+*Node:* ${process.version}
+*Platform:* ${require("os").platform()} ${require("os").arch()}
+
+*Error:*
+\`\`\`
+${stack.substring(0, 3800)}
+\`\`\`
+  `.trim();
+}
+
+async function reportCrash(type, error) {
+  try {
+    const report = formatCrashReport(type, error);
+    const sent = await sendTG(report);
+    console.error(`[FATAL REPORT] ${type} → Telegram ${sent ? "SENT ✅" : "FAILED ❌"}`);
+  } catch (tgErr) {
+    console.error("[FATAL REPORT] Telegram send failed:", tgErr.message);
+  }
+}
+
+process.on("uncaughtException", async (err) => {
+  console.error("[FATAL] Uncaught Exception:", err);
+  await reportCrash("uncaughtException", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", async (reason) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  console.error("[FATAL] Unhandled Rejection:", err);
+  await reportCrash("unhandledRejection", err);
+});
 
 const SESSION_PATH = "./sessions";
 const CREDS_PATH = path.join(__dirname, "sessions", "creds.json");

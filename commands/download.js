@@ -539,3 +539,53 @@ cmd({
     reply("❌ *Fetch Error:* Website archiving failed.");
   }
 });
+
+cmd({
+  pattern: "gitclone",
+  alias: ["gitdl", "repo"],
+  react: "🐙",
+  category: "download",
+  desc: "Clone and download a GitHub repository as ZIP",
+  usage: ".gitclone [github_repo_url]",
+  noPrefix: false,
+}, async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("Yo! Provide a GitHub repo URL. Usage: .gitclone https://github.com/owner/repo");
+
+    let repoUrl = q.trim();
+    if (!repoUrl.includes("github.com")) return reply("❌ Please provide a valid GitHub repository URL.");
+
+    // Normalize to https://github.com/owner/repo
+    repoUrl = repoUrl.replace(/\.git$/, "").replace(/\/$/, "");
+    const parts = repoUrl.split("github.com/");
+    if (parts.length < 2) return reply("❌ Invalid GitHub URL format.");
+    const repoPath = parts[1];
+
+    const zipUrl = `https://github.com/${repoPath}/archive/refs/heads/main.zip`;
+    const masterZipUrl = `https://github.com/${repoPath}/archive/refs/heads/master.zip`;
+
+    await reply(`╭━═『 *GIT CLONE* 』━╮\n┃ 🐙 *Repo:* ${repoPath}\n┃ 📦 *Task:* Downloading ZIP...\n╰━━━━━━━━━━━━━━━━╯`);
+
+    // Try main branch first, fallback to master
+    try {
+      await conn.sendMessage(from, {
+        document: { url: zipUrl },
+        mimetype: "application/zip",
+        fileName: `${repoPath.replace(/\//g, "_")}_main.zip`,
+        caption: `*GitHub Repo Downloaded!*\n🐙 *Repo:* ${repoPath}\n🌿 *Branch:* main\n\n🚀 *${config.BOT_NAME}*`,
+        contextInfo: getContext({ title: "Git Clone", body: "Repository ZIP ready" })
+      }, { quoted: mek });
+    } catch (mainErr) {
+      await conn.sendMessage(from, {
+        document: { url: masterZipUrl },
+        mimetype: "application/zip",
+        fileName: `${repoPath.replace(/\//g, "_")}_master.zip`,
+        caption: `*GitHub Repo Downloaded!*\n🐙 *Repo:* ${repoPath}\n🌿 *Branch:* master (fallback)\n\n🚀 *${config.BOT_NAME}*`,
+        contextInfo: getContext({ title: "Git Clone", body: "Repository ZIP ready (master branch)" })
+      }, { quoted: mek });
+    }
+  } catch (err) {
+    console.error("GITCLONE ERROR:", err);
+    reply("❌ Git clone failed. Make sure the repo URL is correct and public.");
+  }
+});
