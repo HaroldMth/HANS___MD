@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const { cmd } = require("../command");
 const config = require("../config");
 const { exec } = require("child_process");
@@ -94,28 +96,76 @@ cmd(
         return await reply(`✅ *HANS-MD is already up to date (v${CURRENT_VERSION})*`);
       }
 
-      await reply(`🔄 *Update available: v${CURRENT_VERSION} ➔ v${latestVersion}*\n\nStarting update process...`);
+      await reply(`🔄 *Update available: v${CURRENT_VERSION} ➔ v${latestVersion}*\n\nChecking deployment type...`);
 
-      exec("git pull", async (err, stdout, stderr) => {
-        if (err) {
-          console.error(err);
-          return reply(`❌ *Update Failed:*\n\n${stderr}`);
-        }
+      const isGitRepo = fs.existsSync(path.join(process.cwd(), ".git"));
 
-        if (stdout.includes("Already up to date.")) {
-          return reply("✅ Bot is already up to date!");
-        }
+      if (isGitRepo) {
+        exec("git pull", async (err, stdout, stderr) => {
+          if (err) {
+            console.error(err);
+            return reply(`❌ *Git Pull Failed:*\n\n${stderr || err.message}`);
+          }
 
-        await reply(`✅ *Update Successful:* (v${latestVersion})\n\n${stdout}\n\n*Restarting bot via PM2...*`, { 
-          title: "System Update", 
-          body: "Core files synchronized" 
+          if (stdout.includes("Already up to date.")) {
+            return reply("✅ Bot is already up to date!");
+          }
+
+          await reply(`✅ *Git Update Successful:* (v${latestVersion})\n\n${stdout}\n\n*Restarting bot via PM2...*`, {
+            title: "System Update",
+            body: "Core files synchronized"
+          });
+
+          setTimeout(() => process.exit(0), 2500);
         });
-        
-        // Short delay to ensure message is sent
-        setTimeout(() => {
-          process.exit(0);
-        }, 2500);
-      });
+      } else {
+        // Non-git deployment — hot-swap key files from GitHub raw
+        await reply(`⚠️ *Non-git deployment detected.*\n_Fetching latest files directly from GitHub..._`);
+
+        const repoRaw = "https://raw.githubusercontent.com/HaroldMth/HANS___MD/main";
+        const filesToUpdate = [
+          "lib/version.js",
+          "package.json",
+          "commands/ai.js",
+          "commands/fun.js",
+          "commands/tools.js",
+          "commands/download.js",
+          "commands/system.js",
+          "lib/handler.js",
+          "index.js"
+        ];
+
+        let updated = 0;
+        let failed = [];
+
+        for (const file of filesToUpdate) {
+          try {
+            const url = `${repoRaw}/${file}`;
+            const { data } = await axios.get(url, { timeout: 15000 });
+            const localPath = path.join(process.cwd(), file);
+            const dir = path.dirname(localPath);
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            fs.writeFileSync(localPath, data, "utf8");
+            updated++;
+          } catch (dlErr) {
+            failed.push(file);
+            console.error(`[UPDATE] Failed to fetch ${file}:`, dlErr.message);
+          }
+        }
+
+        let msg = `╭━═『 *HOT-SWAP UPDATE* 』═━╮\n┃ ✅ *Files synced:* ${updated}/${filesToUpdate.length}\n┃ 🆕 *Version:* v${latestVersion}\n╰━━━━━━━━━━━━━━━━━━━━━━━╯\n\n`;
+        if (failed.length) {
+          msg += `⚠️ *Failed files:*\n${failed.map(f => `• ${f}`).join("\n")}\n\n`;
+        }
+        msg += `🚀 *Restarting bot via PM2...*\n\n_If issues persist, redeploy from GitHub._`;
+
+        await reply(msg, {
+          title: "Hot-Swap Update",
+          body: `v${CURRENT_VERSION} → v${latestVersion}`
+        });
+
+        setTimeout(() => process.exit(0), 2500);
+      }
     } catch (e) {
       console.error(e);
       reply("❌ Error occurred during update check.");
