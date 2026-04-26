@@ -11,7 +11,7 @@ const { cleanExpired, storeMessage, getStoredMessage, getDB } = require("./lib/d
 const { CURRENT_VERSION } = require("./lib/version");
 const { sendTG } = require("./lib/tg_report");
 
-const logger = pino({ level: "silent" });
+const logger = pino({ level: "info" });
 let presenceInterval = null; // Global to manage single interval
 
 // ─── FATAL ERROR TELEGRAM REPORTING ───
@@ -145,7 +145,7 @@ async function startBot() {
       keys: makeCacheableSignalKeyStore(state.keys, logger)
     },
     logger,
-    browser: Browsers.ubuntu(config.BOT_NAME),
+    browser: ["Ubuntu", "Chrome", "20.0.04"],
     markOnlineOnConnect: true,
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
@@ -174,9 +174,10 @@ async function startBot() {
 
     if (connection === "close") {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
+      console.error("[CONNECTION CLOSED] Detail:", lastDisconnect?.error);
 
       if (statusCode === DisconnectReason.loggedOut) {
-        console.error("Logged out");
+        console.error("Logged out (401) - Check Browser Auth signature");
         process.exit(1);
       }
 
