@@ -146,12 +146,12 @@ async function startBot() {
       keys: makeCacheableSignalKeyStore(state.keys, logger)
     },
     logger,
-    browser: ["Ubuntu", "Chrome", "20.0.04"],
+    browser: ["Mac OS", "Chrome", "14.4.1"],
     markOnlineOnConnect: true,
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     connectTimeoutMs: 60000, 
-    defaultQueryTimeoutMs: 120000,
+    defaultQueryTimeoutMs: undefined,
     keepAliveIntervalMs: 10000,
     agent: new Agent({ family: 4 }),
     version
