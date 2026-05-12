@@ -25,6 +25,75 @@ cmd(
   }
 );
 
+cmd(
+  {
+    pattern: "test",
+    alias: ["debug", "perms"],
+    react: "🧪",
+    category: "general",
+    desc: "Diagnostic test for roles and IDs",
+    usage: ".test",
+    noPrefix: false
+  },
+  async (conn, mek, m, { 
+    from, sender, senderNumber, senderNumberRaw, senderPnJid, 
+    isGroup, isAdmin, isBotAdmin, isOwner, isSudo, isDev, 
+    pushname, prefix, groupMetadata, groupAdmins, participants,
+    botNumber, botJid, reply 
+  }) => {
+    try {
+      const gMeta = groupMetadata || (isGroup ? await conn.groupMetadata(from) : null);
+      const groupName = gMeta?.subject || "N/A";
+      
+      const botLid = conn.user?.lid || "N/A";
+      const hasSignalRepo = !!conn.signalRepository;
+      const hasLidMap = !!(conn.signalRepository?.lidMapping);
+      
+      let text = `🧪 *ĦΔŇŞ ΜĐ : Diagnostic Info*\n\n`;
+      text += `* 👤 *Name:* ${pushname}\n`;
+      text += `* 📍 *From:* ${from}\n`;
+      text += `* 🆔 *Sender (m.sender):* ${sender}\n`;
+      text += `* 🔑 *key.participant:* ${mek.key.participant || "N/A"}\n`;
+      text += `* 🔢 *Num (Raw):* ${senderNumberRaw}\n`;
+      text += `* 🚀 *Num (Resolved):* ${senderNumber}\n`;
+      text += `* 📡 *SenderPnJid:* ${senderPnJid || "N/A"}\n`;
+      text += `* 🤖 *BotJid:* ${botJid}\n`;
+      text += `* ⚡ *Prefix:* ${prefix}\n\n`;
+
+      text += `* 🌐 *isGroup:* ${isGroup}\n`;
+      text += `* 👑 *isOwner:* ${isOwner}\n`;
+      text += `* 🛡️ *isSudo:* ${isSudo}\n`;
+      text += `* 💻 *isDev:* ${isDev}\n`;
+      text += `* 🛠️ *isAdmin:* ${isAdmin}\n`;
+      text += `* ⚙️ *isBotAdmin:* ${isBotAdmin}\n\n`;
+
+      text += `*Bot User Data:*\n`;
+      text += `  id: ${conn.user?.id || "N/A"}\n`;
+      text += `  lid: ${botLid}\n`;
+      text += `  keys: ${Object.keys(conn.user || {}).join(",") || "N/A"}\n\n`;
+
+      text += `*System Internal:*\n`;
+      text += `  SignalRepo: ${hasSignalRepo} | LidMap: ${hasLidMap}\n\n`;
+
+      if (isGroup) {
+        text += `*Group:* ${groupName}\n`;
+        text += `*AdminCount:* ${groupAdmins?.length || 0}\n`;
+        
+        const adminParts = (participants || []).filter(p => p.admin);
+        text += `*Admin raw fields (id | lid | pn):*\n`;
+        adminParts.forEach((p, i) => {
+          text += `  [${i}] id=${p.id} | lid=${p.lid || "-"} | pn=${p.phoneNumber || "-"}\n`;
+        });
+      }
+
+      await reply(text, { title: "Diagnostic Core", body: "Internal Metadata Pulse" });
+    } catch (err) {
+      console.error("TEST CMD ERROR:", err);
+      reply(`❌ Diagnostic Failure: ${err.message}`);
+    }
+  }
+);
+
 function pickActivePrefixes() {
   const db = getDB();
   const p = db?.env?.PREFIX;
