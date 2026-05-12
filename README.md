@@ -13,7 +13,7 @@
 
 **A blazing-fast, feature-packed WhatsApp bot built on Baileys v7 with LID support, 225+ commands, and a premium experience.**
 
-<a href="https://session.hanstech.xyz">
+<a href="https://sessions.hanstech.xyz">
   <img src="https://img.shields.io/badge/GET%20SESSION%20ID-Click%20Here-brightgreen?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Get Session ID" />
 </a>
 &nbsp;&nbsp;
@@ -147,12 +147,12 @@ Your Session ID is required to authenticate the bot with WhatsApp. Getting one i
 
 <div align="center">
 
-### 👉 Visit [session.hanstech.xyz](https://session.hanstech.xyz) 👈
+### 👉 Visit [sessions.hanstech.xyz](https://sessions.hanstech.xyz) 👈
 
 </div>
 
 **Steps:**
-1. Go to **[session.hanstech.xyz](https://session.hanstech.xyz)**
+1. Go to **[sessions.hanstech.xyz](https://sessions.hanstech.xyz)**
 2. Enter your **WhatsApp number** (with country code, e.g. `237680260772`)
 3. Open WhatsApp on your phone → **Linked Devices** → **Link a Device**
 4. Enter the **pairing code** displayed on the site

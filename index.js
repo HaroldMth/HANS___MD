@@ -107,13 +107,16 @@ async function fetchSessionFromCloud() {
   } catch (err) {
     const status = err.response ? `[Status: ${err.response.status}]` : "";
     console.warn(`⚠️ Cloud fetch failed ${status}: ${err.message}`);
-    console.log("💡 Tip: If 404, re-pair your bot at: https://session.hanstech.xyz");
+    console.log("💡 Tip: If 404, re-pair your bot at: https://sessions.hanstech.xyz");
   }
 }
 
 async function startBot() {
+  // ─── ARCHIVED: CLOUD RESTORATION (Disabled until server is back) ───
+  /*
   const { restoreSession } = require("./lib/session");
   await restoreSession(config.SESSION_ID);
+  */
 
   let pairingCode = false;
   try {
@@ -124,6 +127,32 @@ async function startBot() {
   
   if (pairingCode) {
     console.log("⚠️ No valid session found. Entering Pairing Mode...");
+    
+    // Clear stale session tokens/keys to avoid 401 'Logged Out' errors on fresh pairing
+    try { 
+      fs.rmSync(SESSION_PATH, { recursive: true, force: true }); 
+      console.log("🧹 Stale session cleanup complete.");
+    } catch (err) {}
+
+    // Interactive Phone Number Prompt
+    if (!process.env.OWNER_NUMBER) {
+      const readline = require("readline");
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      const question = (text) => new Promise((resolve) => rl.question(text, resolve));
+
+      console.log("\n📲 OWNER_NUMBER is missing in your .env file!");
+      let inputNumber = await question("📝 Enter your phone number with country code (e.g., 237680260772): ");
+      inputNumber = inputNumber.replace(/\D/g, "");
+      
+      if (!inputNumber || inputNumber.length < 10) {
+        console.error("❌ Invalid phone number provided. Restart the bot and try again.");
+        process.exit(1);
+      }
+      
+      // Update config for this session
+      config.OWNER_NUMBER = [inputNumber];
+      rl.close();
+    }
   }
   
   const baileys = await import("@whiskeysockets/baileys");
@@ -158,10 +187,31 @@ async function startBot() {
   });
 
   if (pairingCode && !conn.authState.creds.registered) {
-     const phoneNumber = config.OWNER_NUMBER[0];
+     const phoneNumber = config.OWNER_NUMBER[0].replace(/\D/g, '');
+     
+     // 2-3 second delay to ensure socket is fully ready before requesting code
      setTimeout(async () => {
-        const code = await conn.requestPairingCode(phoneNumber);
-        console.log(`\n\n╭────────────────────────────╮\n│  PAIRING CODE: ${code}  │\n╰────────────────────────────╯\n\nLink using [Linked Devices > Link with Phone Number] on WhatsApp.\n`);
+        try {
+          console.log(`📡 Requesting Pairing Code for: ${phoneNumber}...`);
+          const rawCode = await conn.requestPairingCode(phoneNumber);
+          const formattedCode = rawCode?.match(/.{1,4}/g)?.join('-') || rawCode;
+          
+          console.log(`
+╭──────────────────────────────────────────╮
+│           🔢 PAIRING CODE               │
+│           ${formattedCode}              │
+╰──────────────────────────────────────────╯
+
+🔗 Steps to Link:
+1. Open WhatsApp on your phone.
+2. Go to Settings > Linked Devices.
+3. Tap "Link a Device" -> "Link with phone number instead".
+4. Enter the code shown above.
+`);
+        } catch (err) {
+          console.error("❌ Failed to request pairing code:", err.message);
+          console.log("💡 Tip: Ensure the number in OWNER_NUMBER is correct and includes country code.");
+        }
      }, 3000);
   }
 
@@ -302,11 +352,11 @@ async function startBot() {
 
         const reportText = `╭━━━═ 『 *ANTI-DELETE* 』 ═━━━╮\n` +
                           `┃ 🗑️ *Status:* Recovered\n` +
-                          `┃ 👤 *From:* @${stored.sender.split("@")[0]}\n` +
-                          `┃ 📍 *Source:* ${stored.from.endsWith("@g.us") ? "Group Message" : "Private Chat"}\n` +
+                          `┃ 👤 *From:* @${(stored.sender || "").split("@")[0]}\n` +
+                          `┃ 📍 *Source:* ${(stored.from || "").endsWith("@g.us") ? "Group Message" : "Private Chat"}\n` +
                           `┃ 📅 *Date:* ${new Date(stored.timestamp).toLocaleDateString()}\n` +
                           `┃ ⏰ *Time:* ${new Date(stored.timestamp).toLocaleTimeString()}\n` +
-                          `┃ 📦 *Type:* ${stored.type.toUpperCase()}\n` +
+                          `┃ 📦 *Type:* ${(stored.type || "unknown").toUpperCase()}\n` +
                           `╰━━━━━━━━━━══━━━━━━━━━━╯\n\n` +
                           `*『 ORIGINAL MESSAGE 』*\n` +
                           `━━━━━━━━━━━━━━━━━━\n` +
@@ -462,5 +512,8 @@ async function startBot() {
   return conn;
 }
 
-fetchSessionFromCloud().then(() => startBot());
+// ─── START BOT ───
+// fetchSessionFromCloud().then(() => startBot()); 
+// Cloud vault is currently offline. Jumping straight to startBot().
+startBot();
 
