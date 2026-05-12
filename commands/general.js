@@ -49,7 +49,7 @@ cmd(
       const hasSignalRepo = !!conn.signalRepository;
       const hasLidMap = !!(conn.signalRepository?.lidMapping);
       
-      let text = `🧪 *ĦΔŇŞ ΜĐ : Diagnostic Info*\n\n`;
+      let text = `🧪 *ĦΔŇŞ ΜĐ : System Diagnostic*\n\n`;
       text += `* 👤 *Name:* ${pushname}\n`;
       text += `* 📍 *From:* ${from}\n`;
       text += `* 🆔 *Sender (m.sender):* ${sender}\n`;
@@ -436,7 +436,7 @@ cmd(
       ` ││ ${toFancy('Host')}   : ${config.BOT_NAME}`,
       ` └─────────────┈⳹`,
       ``,
-      `_ĦΔŇŞ Neural Link established. Sectors:_`
+      `_Available Command Categories:_`
     ];
 
     const body = [];
@@ -457,7 +457,7 @@ cmd(
       {
         image: img,
         caption: [...header, ...body].join("\n"),
-        contextInfo: getContext({ title: `ĦΔŇŞ ΜĐ // X-LINK`, body: "Neural Sentinel v5.2", isMenu: true })
+        contextInfo: getContext({ title: config.BOT_NAME, body: "Interactive User Menu", isMenu: true })
       },
       { quoted: mek }
     );
@@ -467,26 +467,41 @@ cmd(
 cmd(
   {
     pattern: "whoami",
-    alias: ["me"],
-    react: "",
+    alias: ["me", "profile"],
+    react: "👤",
     category: "general",
-    desc: "Show your user profile & permissions.",
+    desc: "Display your user profile",
     usage: ".whoami",
     noPrefix: false
   },
-  async (conn, mek, m, { pushname, senderNumber, isDev, isOwner, isSudo, isAdmin, isGroup, reply }) => {
-    let role = "User";
-    if (isDev) role = "Dev";
-    else if (isOwner) role = "Owner";
-    else if (isSudo) role = "Sudo";
-    else if (isGroup && isAdmin) role = "Group Admin";
+  async (conn, mek, m, { pushname, senderNumber, isOwner, isSudo, isAdmin, reply }) => {
+    // Quantum Rank Logic
+    let rank = "ʟ𝟶𝟷: ᴜsᴇʀ";
+    let tag = "ᴜsᴇʀ";
+    if (isOwner) { rank = "ʟ𝟷𝟶: ɢʟᴏʙᴀʟ ᴏᴡɴᴇʀ"; tag = "ᴏᴡɴᴇʀ"; }
+    else if (isSudo) { rank = "ʟ𝟶𝟻: sᴜᴅᴏ ᴍᴏᴅᴇʀᴀᴛᴏʀ"; tag = "sMod"; }
+    else if (isAdmin) { rank = "ʟ𝟶𝟹: ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ"; tag = "ᴀᴅᴍɪɴ"; }
 
-    const text = `USER PROFILE\n\n` +
-                 `Name: ${pushname || "Unknown"}\n` +
-                 `Number: ${senderNumber}\n` +
-                 `Role: ${role}`;
+    const text = `
+👤 *ĦΔŇŞ ΜĐ : USER PROFILE*
 
-    await reply(text);
+┌──────────────┈⳹
+│   ${toFancy('Identity')}  : ${pushname || "Unknown"}
+├──────────────┈⳹
+│ ◈ ${toFancy('Num')}   : ${senderNumber}
+│ ◈ ${toFancy('Rank')}  : ${rank}
+│ ◈ ${toFancy('Tag')}   : [${tag}]
+│ ◈ ${toFancy('Status')} : Verified ⚡
+└──────────────┈⳹
+
+*User JID:*
+_${m.sender}_
+    `.trim();
+
+    await reply(text, { 
+      mentions: [m.sender],
+      ...getContext({ title: "Identity Verified", body: `Rank: ${tag}` })
+    });
   }
 );
 
