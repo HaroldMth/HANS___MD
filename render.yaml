@@ -1,0 +1,17 @@
+services:
+  - type: worker
+    name: HANS-MD-Quantum
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: OWNER_NUMBER
+        sync: false
+      - key: BOT_NAME
+        value: HANS MD
+      - key: OWNER_NAME
+        value: Harold
+      - key: PREFIX
+        value: "."
+      - key: ALWAYS_ONLINE
+        value: "true"

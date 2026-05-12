@@ -1101,7 +1101,14 @@ cmd(
       );
     }
 
-    const type = (args[0] || "").toLowerCase();
+    let type = (args[0] || "").toLowerCase();
+
+    // Support for ".gstatus add text ..." pattern
+    if (type === "add" && args.length > 1) {
+      args.shift();
+      type = (args[0] || "").toLowerCase();
+    }
+
     const validTypes = ["image", "video", "text", "audio"];
 
     if (!validTypes.includes(type)) {

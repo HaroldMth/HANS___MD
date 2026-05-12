@@ -1,0 +1,52 @@
+{
+  "name": "HANS-MD Quantum",
+  "description": "The elite, identity-driven WhatsApp Multi-Device bot.",
+  "repository": "https://github.com/HaroldMth/HANS___MD",
+  "logo": "https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png",
+  "keywords": ["whatsapp", "bot", "baileys", "multidevice"],
+  "env": {
+    "OWNER_NUMBER": {
+      "description": "Your phone number with country code (e.g. 237680260772)",
+      "required": true
+    },
+    "BOT_NAME": {
+      "description": "The name of your bot",
+      "value": "HANS MD",
+      "required": false
+    },
+    "OWNER_NAME": {
+      "description": "Your display name",
+      "value": "Harold",
+      "required": false
+    },
+    "PREFIX": {
+      "description": "Command prefix (e.g. . or !)",
+      "value": ".",
+      "required": false
+    },
+    "TG_BOT_TOKEN": {
+      "description": "Telegram bot token for error reporting (Optional)",
+      "required": false
+    },
+    "TG_CHAT_ID": {
+      "description": "Telegram chat ID for error reporting (Optional)",
+      "required": false
+    },
+    "ALWAYS_ONLINE": {
+      "description": "Keep bot always online (true/false)",
+      "value": "true",
+      "required": false
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "buildpacks": [
+    { "url": "heroku/nodejs" },
+    { "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git" },
+    { "url": "https://github.com/DuckyTeam/heroku-buildpack-imagemagick.git" }
+  ]
+}
