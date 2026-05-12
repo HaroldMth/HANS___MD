@@ -474,13 +474,24 @@ cmd(
     usage: ".whoami",
     noPrefix: false
   },
-  async (conn, mek, m, { pushname, senderNumber, isOwner, isSudo, isAdmin, reply }) => {
-    // Quantum Rank Logic
+  async (conn, mek, m, { pushname, senderNumber, isDev, isOwner, isSudo, isAdmin, reply }) => {
+    // Determine Rank Labels
     let rank = "ʟ𝟶𝟷: ᴜsᴇʀ";
     let tag = "ᴜsᴇʀ";
-    if (isOwner) { rank = "ʟ𝟷𝟶: ɢʟᴏʙᴀʟ ᴏᴡɴᴇʀ"; tag = "ᴏᴡɴᴇʀ"; }
-    else if (isSudo) { rank = "ʟ𝟶𝟻: sᴜᴅᴏ ᴍᴏᴅᴇʀᴀᴛᴏʀ"; tag = "sMod"; }
-    else if (isAdmin) { rank = "ʟ𝟶𝟹: ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ"; tag = "ᴀᴅᴍɪɴ"; }
+    
+    if (isDev) { 
+      rank = "ʀᴏᴏᴛ: ᴅᴇᴠᴇʟᴏᴘᴇʀ"; 
+      tag = "ᴅᴇᴠ"; 
+    } else if (isOwner) { 
+      rank = "ʟ𝟷𝟶: ɢʟᴏʙᴀʟ ᴏᴡɴᴇʀ"; 
+      tag = "ᴏᴡɴᴇʀ"; 
+    } else if (isSudo) { 
+      rank = "ʟ𝟶𝟻: sᴜᴅᴏ ᴍᴏᴅᴇʀᴀᴛᴏʀ"; 
+      tag = "sMod"; 
+    } else if (isAdmin) { 
+      rank = "ʟ𝟶𝟹: ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ"; 
+      tag = "ᴀᴅᴍɪɴ"; 
+    }
 
     const text = `
 👤 *ĦΔŇŞ ΜĐ : USER PROFILE*
