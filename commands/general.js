@@ -441,7 +441,7 @@ cmd(
 
     const body = [];
     for (const [cat, list] of cats) {
-      body.push(`\n┏▣ ◈ ${toFancy(cat.toUpperCase())} SECTOR ◈`);
+      body.push(`\n┏▣ ◈ ${toFancy(cat.toUpperCase())} ◈`);
       const sorted = [...list].sort((a, b) => String(a?.pattern || "").localeCompare(String(b?.pattern || "")));
       for (const c of sorted) {
         const locked = isLocked(c, { isOwner, isSudo, isAdmin, isGroup });

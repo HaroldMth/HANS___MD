@@ -3,8 +3,8 @@ const { getDB, saveGlobal } = require("../lib/database");
 const { exec } = require("child_process");
 const util = require("util");
 
-function requireSudoOrOwner(isSudo, reply) {
-  if (isSudo) return true;
+function requireSudoOrOwner(isOwner, isSudo, reply) {
+  if (isOwner || isSudo) return true;
   reply("❌ Permission denied");
   return false;
 }
@@ -32,8 +32,8 @@ cmd(
     usage: ".public",
     noPrefix: false
   },
-  async (conn, mek, m, { isSudo, reply }) => {
-    if (!requireSudoOrOwner(isSudo, reply)) return;
+  async (conn, mek, m, { isOwner, isSudo, reply }) => {
+    if (!requireSudoOrOwner(isOwner, isSudo, reply)) return;
     const db = getDB();
     db.mode = "public";
     saveGlobal(db);
@@ -50,8 +50,8 @@ cmd(
     usage: ".private",
     noPrefix: false
   },
-  async (conn, mek, m, { isSudo, reply }) => {
-    if (!requireSudoOrOwner(isSudo, reply)) return;
+  async (conn, mek, m, { isOwner, isSudo, reply }) => {
+    if (!requireSudoOrOwner(isOwner, isSudo, reply)) return;
     const db = getDB();
     db.mode = "private";
     saveGlobal(db);
@@ -68,8 +68,8 @@ cmd(
     usage: ".setmode dm|group|both",
     noPrefix: false
   },
-  async (conn, mek, m, { isSudo, args, reply }) => {
-    if (!requireSudoOrOwner(isSudo, reply)) return;
+  async (conn, mek, m, { isOwner, isSudo, args, reply }) => {
+    if (!requireSudoOrOwner(isOwner, isSudo, reply)) return;
     const mode = String(args?.[0] || "").toLowerCase();
     if (!["dm", "group", "both"].includes(mode)) {
       await reply("Usage: .setmode dm|group|both");
@@ -91,8 +91,8 @@ cmd(
     usage: ".setprefix . or .setprefix .,! or .setprefix . !",
     noPrefix: false
   },
-  async (conn, mek, m, { isSudo, q, args, reply }) => {
-    if (!requireSudoOrOwner(isSudo, reply)) return;
+  async (conn, mek, m, { isOwner, isSudo, q, args, reply }) => {
+    if (!requireSudoOrOwner(isOwner, isSudo, reply)) return;
     const raw = (q || args?.join(" ") || "").trim();
     if (!raw) {
       await reply("Usage: .setprefix .  |  .setprefix .,!  |  .setprefix . !");
@@ -237,8 +237,8 @@ cmd(
     usage: ".sudolist",
     noPrefix: false
   },
-  async (conn, mek, m, { isSudo, reply }) => {
-    if (!isSudo) return reply("❌ Permission denied.");
+  async (conn, mek, m, { isOwner, isSudo, reply }) => {
+    if (!requireSudoOrOwner(isOwner, isSudo, reply)) return;
     const db = getDB();
     const list = Array.isArray(db.sudo) ? db.sudo : [];
     if (!list.length) return reply("📋 No sudo users set.");
