@@ -11,7 +11,7 @@
 [![Issues](https://img.shields.io/github/issues/haroldmth/hans___md?style=for-the-badge&color=red)](https://github.com/haroldmth/hans___md/issues)
 [![License](https://img.shields.io/github/license/haroldmth/hans___md?style=for-the-badge&color=green)](LICENSE)
 
-**A blazing-fast, feature-packed WhatsApp bot built on Baileys v7 with LID support, 225+ commands, and a premium experience.**
+**ĦΔŇŞ ΜĐ : ꃅꍏꈤꌗ ꂵꀸ [v2.1.4]** — A blazing-fast, feature-packed WhatsApp bot built on Baileys v7 with LID support, 225+ commands, and an elite terminal-style experience.
 
 <a href="https://sessions.hanstech.xyz">
   <img src="https://img.shields.io/badge/GET%20SESSION%20ID-Click%20Here-brightgreen?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Get Session ID" />
@@ -28,7 +28,7 @@
 ## 📋 Table of Contents
 
 - [✨ Features](#-features)
-- [🔑 Get Your Session ID](#-get-your-session-id)
+- [🔐 Authentication & Pairing](#-authentication--pairing)
 - [🚀 Deployment](#-deployment)
   - [Deploy to Heroku](#-deploy-to-heroku)
   - [Deploy to Koyeb](#-deploy-to-koyeb)
@@ -41,6 +41,16 @@
 - [🛡️ Permissions System](#️-permissions-system)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
+
+---
+
+### 🚀 What's New in v2.1.4 (Quantum Edition)
+
+- **Neural Sentinel HUD v5.2**: A bespoke, slanted terminal interface (`┌──┈⳹`) optimized for mobile.
+- **System-Wide Intelligence**: Real-time monitoring of your host machine's total RAM and precise latency.
+- **Fancy Font Engine**: Built-in Serif Bold Italic conversion for premium menu aesthetics.
+- **Global Error Shield**: Every single core error is tracked and reported to Telegram in real-time.
+- **Infinite Matrix Connectivity**: Deep fixes for LID resolution and "Ghost Message" visibility.
 
 ---
 
@@ -129,11 +139,11 @@
 
 ### 📡 System
 - Auto-Reconnect & Session Recovery
-- PM2 Process Management
-- Telegram Error Reporting
-- Version Check & Auto-Update
-- Newsletter-style Message Context
-- Always Online Presence
+- PM2 & System-wide RAM Monitor
+- Global Telegram Error Shield
+- Neural Sentinel HUD v5.2
+- LID-to-PN Resolution (Baileys v7)
+- Always Online Presence [LIVE]
 
 </td>
 </tr>
@@ -141,25 +151,22 @@
 
 ---
 
-## 🔑 Get Your Session ID
+## 🔐 Authentication & Pairing
 
-Your Session ID is required to authenticate the bot with WhatsApp. Getting one is simple:
+HANS-MD v2.1.4 (Quantum Edition) features a **Direct Interactive Pairing System**. You no longer need external websites to link your bot. It happens right in your terminal or deployment logs.
 
-<div align="center">
+### 📝 The Direct Pairing Flow:
+1. **Deploy the Bot**: Follow the guides below for your platform.
+2. **Set Owner Number**: Ensure your `OWNER_NUMBER` is set in your environment variables (with country code).
+3. **Monitor Logs**: Once the bot starts for the first time, watch the terminal/logs.
+4. **Terminal Prompt**: If `OWNER_NUMBER` is missing, the bot will ask you to type it in the console.
+5. **Get Your Code**: The bot will generate a unique 8-character code (e.g., `ABCD-1234`).
+6. **Link on Phone**: 
+   - Open WhatsApp → **Settings** → **Linked Devices** → **Link a Device**.
+   - Select **"Link with phone number instead"**.
+   - Enter the code displayed in your bot's logs.
 
-### 👉 Visit [sessions.hanstech.xyz](https://sessions.hanstech.xyz) 👈
-
-</div>
-
-**Steps:**
-1. Go to **[sessions.hanstech.xyz](https://sessions.hanstech.xyz)**
-2. Enter your **WhatsApp number** (with country code, e.g. `237680260772`)
-3. Open WhatsApp on your phone → **Linked Devices** → **Link a Device**
-4. Enter the **pairing code** displayed on the site
-5. Copy the Session ID (starts with `HANS-BYTE~`)
-6. Paste it as your `SESSION_ID` environment variable
-
-> ⚠️ **Important:** Never share your Session ID with anyone. It grants full access to your WhatsApp account.
+> 💡 **Legacy Support:** The bot still supports `SESSION_ID` from the old cloud vault if you prefer to use pre-linked sessions.
 
 ---
 
@@ -173,7 +180,7 @@ Your Session ID is required to authenticate the bot with WhatsApp. Getting one i
 2. Fill in the environment variables (see [Configuration](#️-configuration))
 3. Click **Deploy App**
 4. Once deployed, open **Resources** → enable the `worker` dyno
-5. Check **View Logs** to confirm the bot is running
+5. Open the **Logs** tab. You will see the **Pairing Code** generated there. Use it to link your WhatsApp.
 
 ---
 
@@ -186,6 +193,7 @@ Your Session ID is required to authenticate the bot with WhatsApp. Getting one i
 5. Set the **Run Command:** `node index.js`
 6. Add all environment variables from [Configuration](#️-configuration)
 7. Deploy!
+8. Check the **Runtime Logs** to retrieve your **Pairing Code**.
 
 ---
 
@@ -198,6 +206,7 @@ Your Session ID is required to authenticate the bot with WhatsApp. Getting one i
 5. **Start Command:** `node index.js`
 6. Add environment variables
 7. Click **Create Background Worker**
+8. Monitor the **Logs** to find your **Pairing Code**.
 
 ---
 
