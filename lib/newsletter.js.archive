@@ -1,0 +1,33 @@
+const config = require("../config");
+
+const NEWSLETTER = {
+  newsletterJid: "120363422794491778@newsletter",
+  newsletterName: "𝐇𝐀𝐍𝐒 𝐌𝐃",
+  serverMessageId: 143
+};
+
+function getContext(options = {}) {
+  const ctx = {
+    mentionedJid: Array.isArray(options.mentionedJid) ? options.mentionedJid : undefined,
+    forwardingScore: 2, // Safe value to avoid server-side drop (Ghost Messages)
+    isForwarded: true
+  };
+
+  // Only attach newsletter metadata if explicitly requested or for menu-like replies
+  if (options.forceNewsletter || options.isMenu) {
+    ctx.forwardedNewsletterMessageInfo = NEWSLETTER;
+  }
+
+  ctx.externalAdReply = {
+    title: options.title || `🤖 ${config.BOT_NAME || "HANS BYTE V2"} Menu`,
+    body: options.body || `🌟 Commands | Prefix: ${config.PREFIX}`,
+    mediaType: 1,
+    thumbnailUrl: options.thumb || "https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png",
+    sourceUrl: "https://whatsapp.com/channel/0029Vb6F9V9FHWpsqWq1CF14"
+  };
+
+  return ctx;
+}
+
+module.exports = { getContext, NEWSLETTER };
+

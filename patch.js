@@ -46,8 +46,8 @@ function applyPatch() {
 
     const socketPath = path.join(baileysPath, 'Socket', 'socket.js');
     let socketContent = fs.readFileSync(socketPath, 'utf8');
-    const socketPatched = socketContent.replace(/await\s+noise\.finishInit\(\)/g, 'noise.finishInit()');
-    assertReplaced(socketContent, socketPatched, 'await noise.finishInit() → noise.finishInit()');
+    const socketPatched = socketContent; // Keeping await noise.finishInit() for RC10 stability
+    // assertReplaced(socketContent, socketPatched, 'await noise.finishInit() → noise.finishInit()');
     fs.writeFileSync(socketPath, socketPatched);
 
     // Verify

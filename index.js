@@ -166,7 +166,8 @@ async function startBot() {
   } = baileys;
 
   const { state, saveCreds } = await useMultiFileAuthState(SESSION_PATH);
-  const { version } = await fetchLatestBaileysVersion();
+  // Hardcode the EXACT version that previously worked for this bot
+  const version = [2, 3000, 1035194821]; 
 
   console.log("🛠️ Initializing Baileys socket...");
   const conn = makeWASocket({
@@ -183,7 +184,21 @@ async function startBot() {
     defaultQueryTimeoutMs: undefined,
     keepAliveIntervalMs: 10000,
     agent: new Agent({ family: 4 }),
-    version
+    version,
+    getMessage: async (key) => {
+      const msg = getStoredMessage(key.id);
+      if (msg) return msg.message;
+      return undefined; // Return undefined for properly handled retries
+    }
+  });
+
+  // Store outgoing messages to facilitate retries (decryption fix)
+  conn.ev.on("messages.upsert", async ({ messages, type }) => {
+    for (const msg of messages) {
+       if (msg.key.fromMe) {
+          storeMessage(msg);
+       }
+    }
   });
 
   if (pairingCode && !conn.authState.creds.registered) {
@@ -264,7 +279,7 @@ async function startBot() {
             const ownerJid = owner.includes("@") ? owner : `${owner}@s.whatsapp.net`;
             await conn.sendMessage(ownerJid, { 
               text: `✅ *${config.BOT_NAME} is now ONLINE!*\n\nVersion: v${CURRENT_VERSION}\nPrefix: ${config.PREFIX[0]}`,
-              contextInfo: require("./lib/newsletter").getContext({ title: "System Online", body: "Connection established" })
+              contextInfo: require("./lib/newsletter").getContext({ title: "System Online", body: "Connection established", forceNewsletter: true })
             }).then(() => console.log(`✅ Sent notification to ${ownerJid}`))
               .catch((err) => console.error(`❌ Failed to send notification to ${ownerJid}:`, err.message));
           }

@@ -301,6 +301,27 @@ cmd(
   }
 );
 
+let menuImageBuffer = null;
+async function fetchMenuBuffer() {
+  if (menuImageBuffer) return menuImageBuffer;
+  try {
+    const axios = require("axios");
+    const res = await axios.get("https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png", { responseType: "arraybuffer" });
+    menuImageBuffer = Buffer.from(res.data);
+    return menuImageBuffer;
+  } catch {
+    return { url: "https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png" };
+  }
+}
+
+const toFancy = (text) => {
+  const table = {
+    'A': '𝑨', 'B': '𝑩', 'C': '𝑪', 'D': '𝑫', 'E': '𝑬', 'F': '𝑭', 'G': '𝑮', 'H': '𝑯', 'I': '𝑰', 'J': '𝑱', 'K': '𝑲', 'L': '𝑳', 'M': '𝑴', 'N': '𝑵', 'O': '𝑶', 'P': '𝑷', 'Q': '𝑸', 'R': '𝑹', 'S': '𝑺', 'T': '𝑻', 'U': '𝑼', 'V': '𝑽', 'W': '𝑾', 'X': '𝑿', 'Y': '𝒀', 'Z': '𝒁',
+    'a': '𝒂', 'b': '𝒃', 'c': '𝒄', 'd': '𝒅', 'e': '𝒆', 'f': '𝒇', 'g': '𝒈', 'h': '𝒉', 'i': '𝒊', 'j': '𝒋', 'k': '𝒌', 'l': '𝒍', 'm': '𝒎', 'n': '𝒏', 'o': '𝒐', 'p': '𝒑', 'q': '𝒒', 'r': '𝒓', 's': '𝒔', 't': '𝒕', 'u': '𝒖', 'v': '𝒗', 'w': '𝒘', 'x': '𝒙', 'y': '𝒚', 'z': '𝒛'
+  };
+  return text.split('').map(char => table[char] || char).join('');
+};
+
 cmd(
   {
     pattern: "menu",
@@ -315,53 +336,59 @@ cmd(
     const prefixes = pickActivePrefixes();
     const cats = groupCommandsByCategory(commands);
     
-    // RAM Memory Calculation
-    const used = process.memoryUsage().rss;
-    const total = os.totalmem();
-    const percent = (used / total) * 100;
-    const numFull = Math.floor(percent / 10);
-    const bar = "■".repeat(numFull) + "□".repeat(10 - numFull);
+    // System RAM Calculation
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const percent = (usedMem / totalMem) * 100;
+    const numFull = Math.max(1, Math.ceil(percent / 10)); 
+    const bar = "█".repeat(numFull) + "░".repeat(Math.max(0, 10 - numFull));
+    
+    // Real Ping
+    const ping = Date.now() - (mek.messageTimestamp * 1000);
 
     // Role Determination
-    let role = "User 👤";
-    if (isDev) role = "Developer 💻";
-    else if (isOwner) role = "Owner 👑";
-    else if (isSudo) role = "Sudo 🛡️";
-    else if (isAdmin) role = "Admin 🛠️";
+    let roleStr = "ᴜsᴇʀ";
+    let tag = "ʟ𝟶𝟷";
+    if (isDev) { roleStr = "ᴅᴇᴠᴇʟᴏᴘᴇʀ"; tag = "ʀᴏᴏᴛ"; }
+    else if (isOwner) { roleStr = "ᴏᴡɴᴇʀ"; tag = "ʟ𝟷𝟶"; }
+    else if (isSudo) { roleStr = "sᴜᴅᴏ"; tag = "ʟ𝟶𝟻"; }
+    else if (isAdmin) { roleStr = "ᴀᴅᴍɪɴ"; tag = "ʟ𝟶𝟹"; }
 
     const header = [
-      `╭━━━═ 『 *${config.BOT_NAME.toUpperCase()}* 』 ═━━━╮`,
-      `┃ 🕶️ *Yo,* ${pushname || "Friend"}!`,
-      `┃ 🎖️ *Role:* ${role}`,
-      `┃ 🔢 *Version:* v${CURRENT_VERSION}`,
-      `┃ ⚙️ *Prefix:* ${prefix || prefixes[0]}`,
-      `┃ ⌛ *Runtime:* ${require("./system").runtime(process.uptime())}`,
-      `┃ 🧠 *RAM Usage:* ${bar} ${percent.toFixed(1)}%`,
-      `┃ 💎 *Status:* Active & Locked`,
-      `╰━━━━━━━━━━══━━━━━━━━━━╯`,
+      `┌──────────────┈⳹`,
+      `│   ꃅꍏꈤꌗ ꂵꀸ : v${CURRENT_VERSION}`,
+      `└┬─────────────┈⳹`,
+      ` ┌┤ ${toFancy('User')}   : ${String(pushname || "Friend").substring(0, 12)} [${tag}]`,
+      ` ││ ${toFancy('Rank')}   : ${roleStr}`,
+      ` ││ ${toFancy('Memory')} : [${bar}] ${percent.toFixed(1)}%`,
+      ` ││ ${toFancy('Ping')}   : ${ping}ms`,
+      ` ││ ${toFancy('Uptime')} : ${require("./system").runtime(process.uptime()).split(",").slice(0, 2).join(",")}`,
+      ` ││ ${toFancy('Host')}   : ${config.BOT_NAME}`,
+      ` └─────────────┈⳹`,
       ``,
-      `_HANS MD is standing by. Choose a sector:_`,
-      `_Special commands marked with_ *`
+      `_ĦΔŇŞ Neural Link established. Sectors:_`
     ];
 
     const body = [];
     for (const [cat, list] of cats) {
-      body.push(`\n╭───『 *${cat.toUpperCase()}* 』`);
+      body.push(`\n┏▣ ◈ ${toFancy(cat.toUpperCase())} SECTOR ◈`);
       const sorted = [...list].sort((a, b) => String(a?.pattern || "").localeCompare(String(b?.pattern || "")));
       for (const c of sorted) {
         const locked = isLocked(c, { isOwner, isSudo, isAdmin, isGroup });
-        const star = locked ? "*" : "";
-        body.push(`┃ ⚡ ${star}${prefixes[0]}${c.pattern}${star}`);
+        body.push(`┃ ➽ ${prefixes[0]}${c.pattern}${locked ? " 🔒" : ""}`);
       }
-      body.push(`╰━━━━━━━━━━━━━━━━━━━━╯`);
+      body.push(`┗▣─────────────┈⳹`);
     }
+
+    const img = await fetchMenuBuffer();
 
     await conn.sendMessage(
       from,
       {
-        image: { url: "https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png" },
+        image: img,
         caption: [...header, ...body].join("\n"),
-        contextInfo: getContext({ title: `${config.BOT_NAME} Dashboard`, body: "Ready for your next command" })
+        contextInfo: getContext({ title: `ĦΔŇŞ ΜĐ // X-LINK`, body: "Neural Sentinel v5.2", isMenu: true })
       },
       { quoted: mek }
     );
