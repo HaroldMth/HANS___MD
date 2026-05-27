@@ -20,7 +20,7 @@ cmd(
     react: "",
     category: "group",
     desc: "Create a new WhatsApp group",
-    usage: ".creategroup GroupName @user1 @user2 ...",
+    usage: ".creategroup GroupName | @user1 2376xxxxxxx",
     noPrefix: false,
   },
   async (conn, mek, m, { from, reply, args, mentionedJid, isOwner, isSudo }) => {
@@ -41,11 +41,9 @@ cmd(
       const tokens = raw.split(/\s+/).filter(Boolean);
       const firstMemberIdx = tokens.findIndex((t) => !!normalizeJid(t));
       if (firstMemberIdx === -1 && (!Array.isArray(mentionedJid) || mentionedJid.length === 0)) {
-        // No explicit members in text: treat full input as group name.
         groupName = raw;
         membersPart = "";
       } else {
-        // Legacy mode without "|" where members are appended after name.
         if (firstMemberIdx === -1) {
           groupName = raw;
           membersPart = "";
@@ -62,64 +60,54 @@ cmd(
 
     const participantsSet = new Set();
 
-    // Mentioned users first.
     if (Array.isArray(mentionedJid)) {
       for (const jid of mentionedJid) {
         const normalized = normalizeJid(jid);
-        if (normalized) participantsSet.add(normalized);
+        if (normalized && normalized.endsWith("@s.whatsapp.net")) participantsSet.add(normalized);
       }
     }
 
-    // Parse plain numbers/jids from the right side.
     if (membersPart) {
       const tokens = membersPart.split(/\s+/).filter(Boolean);
       for (const token of tokens) {
         const normalized = normalizeJid(token);
-        if (normalized) participantsSet.add(normalized);
+        if (normalized && normalized.endsWith("@s.whatsapp.net")) participantsSet.add(normalized);
       }
     }
 
-    // Include command sender so WA has at least one valid participant.
     const senderJid = normalizeJid(m.sender || "");
-    if (senderJid) participantsSet.add(senderJid);
+    if (senderJid && senderJid.endsWith("@s.whatsapp.net")) participantsSet.add(senderJid);
 
-    // Include bot account too.
     const botJid = normalizeJid(conn.user?.id || "");
-    if (botJid) participantsSet.add(botJid);
+    if (botJid && botJid.endsWith("@s.whatsapp.net")) participantsSet.add(botJid);
 
     let participants = Array.from(participantsSet);
     if (participants.length === 0) {
       return reply("No valid participants found. Mention users or pass numbers after '|'.");
     }
 
-    // WhatsApp allows up to 1023 participants in group creation
-    // But for safety, limit to reasonable number
-    if (participants.length > 50) {
-      participants = participants.slice(0, 50);
-    }
-    
+    if (participants.length > 50) participants = participants.slice(0, 50);
+
     try {
       reply("Creating group...");
-      
+
       const group = await conn.groupCreate(groupName, participants);
-      
+
       const successMessage = `Group Created Successfully\n\n` +
                              `*Group Name:* ${groupName}\n` +
                              `*Group ID:* ${group.id}\n` +
                              `*Participants:* ${participants.length}\n\n` +
                              `You can now use this group ID for other group commands.`;
-      
+
       await reply(successMessage);
-      
-      // Send invite link
+
       try {
         const inviteCode = await conn.groupInviteCode(group.id);
-        const inviteLink = `https://chat.whatsapp.com/${inviteCode}`;
-        await reply(`Invite Link: ${inviteLink}`);
-      } catch (err) {
-        console.error("Failed to get invite code:", err);
+        await reply(`Invite Link: https://chat.whatsapp.com/${inviteCode}`);
+      } catch {
+        // bot not admin yet, skip
       }
-      
+
     } catch (error) {
       console.error("Group creation error:", error);
       await reply(`Failed to create group: ${error.message}`);
@@ -133,120 +121,78 @@ cmd(
     alias: ["cgcopy", "duplicate"],
     react: "",
     category: "group",
-    desc: "Create a copy of current group with same members",
+    desc: "Create an exact copy of current group including all members",
     usage: ".copygroup NewGroupName",
     noPrefix: false,
   },
-  async (conn, mek, m, { from, reply, args, isOwner, isSudo, isAdmin, isGroup }) => {
+  async (conn, mek, m, { from, reply, args, isOwner, isSudo, isGroup }) => {
     if (!isGroup) return reply("This command only works in groups.");
     if (!isOwner && !isSudo) return reply("Only owners and sudo can copy groups.");
-    
+
     const groupName = args[0];
     if (!groupName) {
       return reply("Please provide a new group name.\nUsage: .copygroup NewGroupName");
     }
-    
+
     try {
-      // Get current group metadata
       const groupMetadata = await conn.groupMetadata(from);
       const participants = groupMetadata.participants;
-      
-      // Filter for owner, sudo, and admin participants
-      const specialParticipants = [];
-      
-      // Get owner numbers from config
-      const config = require("../config");
-      const ownerNumbers = config.OWNER_NUMBER || [];
-      const db = require("../lib/database").getDB();
-      const sudoNumbers = db.sudo || [];
-      
+
+      const allParticipants = [];
+
       for (const participant of participants) {
-        const normalizedParticipantJid = normalizeJid(participant.id || participant.lid || participant.phoneNumber || "");
-        if (!normalizedParticipantJid) continue;
-        const participantNumber = normalizedParticipantJid.split("@")[0];
-        
-        // Include if owner, sudo, or admin
-        const isOwner = ownerNumbers.includes(participantNumber);
-        const isSudo = sudoNumbers.includes(participantNumber);
-        const isAdmin = participant.admin === "admin" || participant.admin === "superadmin";
-        
-        if (isOwner || isSudo || isAdmin) {
-          specialParticipants.push(normalizedParticipantJid);
+        let jid = "";
+
+        if (participant.id && participant.id.endsWith("@s.whatsapp.net")) {
+          // Standard JID, use directly
+          jid = participant.id;
+        } else if (participant.phoneNumber && participant.phoneNumber.endsWith("@s.whatsapp.net")) {
+          // phoneNumber is already a full JID
+          jid = participant.phoneNumber;
+        } else if (participant.phoneNumber) {
+          // phoneNumber exists but without suffix
+          jid = participant.phoneNumber.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
+        }
+        // LID-only participants with no phoneNumber are skipped — cannot be resolved
+
+        if (jid && !allParticipants.includes(jid)) {
+          allParticipants.push(jid);
         }
       }
-      
-      // Always include the bot
-      const botJid = normalizeJid(conn.user?.id || "");
-      if (botJid && !specialParticipants.includes(botJid)) {
-        specialParticipants.push(botJid);
+
+      // Strip device suffix (:33) from bot JID before adding
+      const botJid = (conn.user?.id || "").split(":")[0].replace(/[^0-9]/g, "") + "@s.whatsapp.net";
+      if (botJid && !allParticipants.includes(botJid)) {
+        allParticipants.push(botJid);
       }
-      
-      if (specialParticipants.length === 0) {
-        return reply("No special participants (owner/sudo/admin) found to include.");
+
+      if (allParticipants.length === 0) {
+        return reply("No valid participants found to copy.");
       }
-      
-      reply(`Creating group copy with ${specialParticipants.length} special members...`);
-      
-      const newGroup = await conn.groupCreate(groupName, specialParticipants);
-      
+
+      reply(`Creating exact copy with ${allParticipants.length} members...`);
+
+      const newGroup = await conn.groupCreate(groupName, allParticipants);
+
       const successMessage = `Group Copied Successfully\n\n` +
                              `*New Group Name:* ${groupName}\n` +
                              `*New Group ID:* ${newGroup.id}\n` +
-                             `*Members Added:* ${specialParticipants.length}\n` +
+                             `*Members Copied:* ${allParticipants.length}\n` +
                              `*Source Group:* ${groupMetadata.subject}\n\n` +
-                             `Only owner, sudo, and admin members were copied.`;
-      
+                             `All members were copied.`;
+
       await reply(successMessage);
-      
-      // Send invite link for new group
+
       try {
         const inviteCode = await conn.groupInviteCode(newGroup.id);
-        const inviteLink = `https://chat.whatsapp.com/${inviteCode}`;
-        await reply(`New Group Invite: ${inviteLink}`);
-      } catch (err) {
-        console.error("Failed to get invite code:", err);
+        await reply(`New Group Invite: https://chat.whatsapp.com/${inviteCode}`);
+      } catch {
+        // bot not admin yet, skip
       }
-      
+
     } catch (error) {
       console.error("Group copy error:", error);
       await reply(`Failed to copy group: ${error.message}`);
-    }
-  }
-);
-
-cmd(
-  {
-    pattern: "groupinfo",
-    alias: ["ginfo", "metadata"],
-    react: "",
-    category: "group",
-    desc: "Get group metadata and settings",
-    usage: ".groupinfo",
-    noPrefix: false,
-  },
-  async (conn, mek, m, { from, reply, isGroup }) => {
-    if (!isGroup) return reply("This command only works in groups.");
-    
-    try {
-      const metadata = await conn.groupMetadata(from);
-      const inviteCode = await conn.groupInviteCode(from);
-      
-      const info = `Group Information\n\n` +
-                  `*Name:* ${metadata.subject}\n` +
-                  `*ID:* ${metadata.id}\n` +
-                  `*Created:* ${metadata.creation}\n` +
-                  `*Owner:* ${metadata.owner}\n` +
-                  `*Desc:* ${metadata.desc || "No description"}\n` +
-                  `*Participants:* ${metadata.participants.length}\n` +
-                  `*Admins:* ${metadata.participants.filter(p => p.admin).length}\n` +
-                  `*Invite Link:* https://chat.whatsapp.com/${inviteCode}\n` +
-                  `*Announcement:* ${metadata.announce ? "Only admins" : "Everyone"}\n` +
-                  `*Locked:* ${metadata.restrict ? "Only admins" : "Everyone"}`;
-      
-      await reply(info);
-    } catch (error) {
-      console.error("Group info error:", error);
-      await reply(`Failed to get group info: ${error.message}`);
     }
   }
 );

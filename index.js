@@ -8,6 +8,7 @@ const config = require("./config");
 const serialize = require("./lib/serialize");
 const handler = require("./lib/handler");
 const { loadCommands } = require("./lib/loader");
+const { loadThumb } = require("./lib/newsletter");
 const { cleanExpired, storeMessage, getStoredMessage, getDB } = require("./lib/database");
 const { CURRENT_VERSION } = require("./lib/version");
 const { sendTG } = require("./lib/tg_report");
@@ -298,6 +299,7 @@ async function startBot() {
 
   conn.ev.on("creds.update", saveCreds);
 
+  await loadThumb();
   loadCommands();
 
   cleanExpired();

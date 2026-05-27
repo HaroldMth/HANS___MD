@@ -907,7 +907,7 @@ cmd(
       const adminTail = adminsList.length > 20 ? `\n...and ${adminsList.length - 20} more admin(s).` : "";
 
       const text = [
-        "╭━━━═『 *GROUP INTEL* 』═━━━╮",
+        "╭━━━═『 *GROUP INFO* 』═━━━╮",
         `┃ 🏷️ *Name:* ${gMeta.subject || "Unknown"}`,
         `┃ 🆔 *JID:* ${from}`,
         `┃ 👑 *Owner:* ${ownerTag}`,
