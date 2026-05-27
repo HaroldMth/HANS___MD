@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node index.js",
-    "start:pm2": "pm2 start ecosystem.config.js",
+    "start": "pm2 start ecosystem.config.js --attach",
+    "start:direct": "node index.js",
     "gen:protobuf": "sh WAProto/GenerateStatics.sh",
     "postinstall": "cp -r node_modules/gifted/WAProto/* node_modules/@whiskeysockets/baileys/WAProto/ && sed -i 's/var $protobuf = require(\"protobufjs\\/minimal\");/import $protobuf from \"protobufjs\\/minimal.js\";/g' node_modules/@whiskeysockets/baileys/WAProto/index.js && sed -i 's/module.exports = $root;/export const proto = $root.proto; export default $root;/g' node_modules/@whiskeysockets/baileys/WAProto/index.js && node patch.js",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
