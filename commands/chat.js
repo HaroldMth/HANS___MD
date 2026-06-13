@@ -253,8 +253,13 @@ cmd(
     
     try {
       // Get recent messages to mark as read
-      const messages = await conn.fetchMessages(targetJid, 10);
-      const messageKeys = messages.map(msg => msg.key);
+      const { getChatHistory } = require("../lib/database");
+      const messages = getChatHistory(targetJid, 10);
+      const messageKeys = messages.map(msg => ({
+        remoteJid: targetJid,
+        id: msg.id,
+        fromMe: msg.fromMe || false
+      }));
       
       if (messageKeys.length > 0) {
         await conn.readMessages(messageKeys);
@@ -496,8 +501,9 @@ cmd(
     
     try {
       // Get recent messages to clear
-      const messages = await conn.fetchMessages(targetJid, 50);
-      const messageIds = messages.map(msg => ({ id: msg.key.id, fromMe: msg.key.fromMe }));
+      const { getChatHistory } = require("../lib/database");
+      const messages = getChatHistory(targetJid, 50);
+      const messageIds = messages.map(msg => ({ id: msg.id, fromMe: msg.fromMe || false }));
       
       if (messageIds.length > 0) {
         await conn.chatModify({ clear: { messages: messageIds } }, targetJid);

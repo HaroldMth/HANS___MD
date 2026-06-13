@@ -17,5 +17,7 @@ module.exports = {
   REPO_NAME: process.env.REPO_NAME || "hans___md",
   // Telegram Error Reporting
   TG_BOT_TOKEN: process.env.TG_BOT_TOKEN || "", 
-  TG_CHAT_ID: process.env.TG_CHAT_ID || ""
+  TG_CHAT_ID: process.env.TG_CHAT_ID || "",
+  // API Keys
+  GIFTED_API_KEY: process.env.GIFTED_API_KEY || "gifted"
 };

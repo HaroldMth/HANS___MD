@@ -12,8 +12,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1
       '@whiskeysockets/baileys':
-        specifier: 7.0.0-rc10
-        version: 7.0.0-rc10(link-preview-js@3.2.0)(sharp@0.34.5)
+        specifier: npm:@itsliaaa/baileys@latest
+        version: '@itsliaaa/baileys@0.3.17(link-preview-js@3.2.0)(sharp@0.34.5)'
       axios:
         specifier: ^1.15.2
         version: 1.15.2
@@ -32,6 +32,9 @@ importers:
       pino:
         specifier: ^9.9.0
         version: 9.14.0
+      pino-pretty:
+        specifier: ^13.1.3
+        version: 13.1.3
       pm2:
         specifier: ^5.3.0
         version: 5.4.3
@@ -43,6 +46,9 @@ importers:
         version: 2.13.1
 
 packages:
+
+  '@adiwajshing/keyed-db@0.2.4':
+    resolution: {integrity: sha512-yprSnAtj80/VKuDqRcFFLDYltoNV8tChNwFfIgcf6PGD4sjzWIBgs08pRuTqGH5mk5wgL6PBRSsMCZqtZwzFEw==}
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
@@ -225,6 +231,28 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@itsliaaa/baileys@0.3.17':
+    resolution: {integrity: sha512-2JZnaKoqWOe0QVDy5UswsfzH2vahAOT2IcVOI8863JLur7T0OOOadIYdqMjXuddx1oFcJeeRxwuFpnzEfws6yQ==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      '@napi-rs/image': ~1.12.0
+      audio-decode: ^2.2.3
+      better-sqlite3: ^11.0.0
+      jimp: ^1.6.1
+      link-preview-js: ^3.0.0
+      sharp: '*'
+    peerDependenciesMeta:
+      '@napi-rs/image':
+        optional: true
+      audio-decode:
+        optional: true
+      better-sqlite3:
+        optional: true
+      jimp:
+        optional: true
+      link-preview-js:
+        optional: true
+
   '@jsep-plugin/assignment@1.3.0':
     resolution: {integrity: sha512-VVgV+CXrhbMI3aSusQyclHkenWSAm95WaiKrMxRFam3JSUiIaQjoMIw2sEs/OX4XifnqeQUN4DYbJjlA8EfktQ==}
     engines: {node: '>= 10.16.0'}
@@ -305,26 +333,6 @@ packages:
 
   '@types/node@25.6.0':
     resolution: {integrity: sha512-+qIYRKdNYJwY3vRCZMdJbPLJAtGjQBudzZzdzwQYkEPQd+PJGixUL5QfvCLDaULoLv+RhT3LDkwEfKaAkgSmNQ==}
-
-  '@whiskeysockets/baileys@7.0.0-rc10':
-    resolution: {integrity: sha512-tVHZRIE06HlQajHcLEsCa+gnH5z+dAXPjwHsGXDNY9/Y0iqbymQzHLvh4tMH/pi/ea/D617qCQhNkDT2B0tufg==}
-    engines: {node: '>=20.0.0'}
-    deprecated: |-
-      This version is affected by a zero-day vulnerability that allows spoofing of messages, please update to
-        the latest versions (6.7.22^ or 7.0.0-rc12^)! For more information, check out the public advisory at
-        https://github.com/WhiskeySockets/Baileys/security/advisories/GHSA-qvv5-jq5g-4cgg
-    peerDependencies:
-      audio-decode: ^2.1.3
-      jimp: ^1.6.1
-      link-preview-js: ^3.0.0
-      sharp: '*'
-    peerDependenciesMeta:
-      audio-decode:
-        optional: true
-      jimp:
-        optional: true
-      link-preview-js:
-        optional: true
 
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -496,6 +504,9 @@ packages:
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
 
+  colorette@2.0.20:
+    resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
+
   combined-stream@1.0.8:
     resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
     engines: {node: '>= 0.8'}
@@ -532,6 +543,9 @@ packages:
   data-uri-to-buffer@6.0.2:
     resolution: {integrity: sha512-7hvf7/GW8e86rW0ptuwS3OcBGDjIi6SZva7hCyWC0yYry2cOPmLIjXAUHI6DK2HsnwJd9ifmt57i8eV2n4YNpw==}
     engines: {node: '>= 14'}
+
+  dateformat@4.6.3:
+    resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
 
   dayjs@1.11.20:
     resolution: {integrity: sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ==}
@@ -684,11 +698,20 @@ packages:
   extrareqp2@1.0.0:
     resolution: {integrity: sha512-Gum0g1QYb6wpPJCVypWP3bbIuaibcFiJcpuPM10YSXp/tzqi84x9PJageob+eN4xVRIOto4wjSGNLyMD54D2xA==}
 
+  fast-copy@4.0.3:
+    resolution: {integrity: sha512-58apWr0GUiDFM8+3afrO6eYwJBn9ZAhDOzG3L+/9llab/haCARS2UIfffmOurYLwbgDRs8n0rfr6qAAPEAuAQw==}
+
   fast-json-patch@3.1.1:
     resolution: {integrity: sha512-vf6IHUX2SBcA+5/+4883dsIjpBTqmfBjmYiWK1savxQmFk4JfBMLa7ynTYOs1Rolp/T1betJxHiGD3g1Mn8lUQ==}
 
+  fast-safe-stringify@2.1.1:
+    resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
+
   fclone@1.0.11:
     resolution: {integrity: sha512-GDqVQezKzRABdeqflsgMr7ktzgF9CyS+p2oe0jJqUY6izSSbhPIQJDpoU4PtGcD7VPM9xh/dVrTu6z1nwgmEGw==}
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   file-type@16.5.4:
     resolution: {integrity: sha512-/yFHK0aGjFEgDJjEKP0pWCplsPFPhwyfwevf/pVxiN0tmE4L9LmwWxWukdJSHdoCli4VgQLehjJtwQBnqmsKcw==}
@@ -777,6 +800,9 @@ packages:
     resolution: {integrity: sha512-ej4AhfhfL2Q2zpMmLo7U1Uv9+PyhIZpgQLGT1F9miIGmiCJIoCgSmczFdrc97mWT4kVY72KA+WnnhJ5pghSvSg==}
     engines: {node: '>= 0.4'}
 
+  help-me@5.0.0:
+    resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
+
   hookified@1.15.1:
     resolution: {integrity: sha512-MvG/clsADq1GPM2KGo2nyfaWVyn9naPiXrqIe4jYjXNZQt238kWyOGrsyc/DmRAQ+Re6yeo6yX/yoNCG5KAEVg==}
 
@@ -845,6 +871,10 @@ packages:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
 
+  joycon@3.1.1:
+    resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
+    engines: {node: '>=10'}
+
   js-git@0.7.8:
     resolution: {integrity: sha512-+E5ZH/HeRnoc/LW0AmAyhU+mNcWBzAKE+30+IDMLSLbbK+Tdt02AdkOKq9u15rlJsDEGFqtgckc8ZM59LhhiUA==}
 
@@ -874,12 +904,11 @@ packages:
     resolution: {integrity: sha512-Y+CjUfLmIpoUCCRl0ub4smrYtGGr5AOa2AKOaWelGHOGz33X/Y/KizefGqbkwfz44+cnq/+9habclf8vOmu2LA==}
     engines: {node: '>=0.2.0'}
 
+  libsignal@6.0.0:
+    resolution: {integrity: sha512-d/5V3YFtDljbFMufz4ncyUYGYhJl+vzAe+c2EFFBQ6bz1h8Q3IOMEGXYMzlibU60I+e8GagMMpji18iez3P1hA==}
+
   libsignal@https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7:
     resolution: {gitHosted: true, tarball: https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7}
-    version: 6.0.0
-
-  libsignal@https://codeload.github.com/whiskeysockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/whiskeysockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7}
     version: 6.0.0
 
   link-preview-js@3.2.0:
@@ -1052,6 +1081,13 @@ packages:
   pino-abstract-transport@2.0.0:
     resolution: {integrity: sha512-F63x5tizV6WCh4R6RHyi2Ml+M70DNRXt/+HANowMflpgGFMAym/VKm6G7ZOQRjqN7XbGxK1Lg9t6ZrtzOaivMw==}
 
+  pino-abstract-transport@3.0.0:
+    resolution: {integrity: sha512-wlfUczU+n7Hy/Ha5j9a/gZNy7We5+cXp8YL+X+PG8S0KXxw7n/JXA3c46Y0zQznIJ83URJiwy7Lh56WLokNuxg==}
+
+  pino-pretty@13.1.3:
+    resolution: {integrity: sha512-ttXRkkOz6WWC95KeY9+xxWL6AtImwbyMHrL1mSwqwW9u+vLp/WIElvHvCSDg0xO/Dzrggz1zv3rN5ovTRVowKg==}
+    hasBin: true
+
   pino-std-serializers@7.1.0:
     resolution: {integrity: sha512-BndPH67/JxGExRgiX1dX0w1FvZck5Wa4aal9198SrRhZjH3GxKQUKIBnYJTdj2HDN3UQAS06HlfcSbQj2OHmaw==}
 
@@ -1189,6 +1225,9 @@ packages:
     resolution: {integrity: sha512-6R3J5M4AcbtLUdZmRv2SygeVaM7IhrLXu9BmnOGmmACak8fiUtOsYNWUS4uK7upbmHIBbLBeFeI//477BKLBzA==}
     engines: {node: '>=11.0.0'}
 
+  secure-json-parse@4.1.0:
+    resolution: {integrity: sha512-l4KnYfEyqYJxDwlNVyRfO2E4NTHfMKAWdUuA8J0yve2Dz/E/PdBepY03RvyJpssIpRFwJoCD55wA+mEDs6ByWA==}
+
   semver@7.5.4:
     resolution: {integrity: sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==}
     engines: {node: '>=10'}
@@ -1254,6 +1293,10 @@ packages:
   strip-ansi@4.0.0:
     resolution: {integrity: sha512-4XaJ2zQdCzROZDivEVIDPkcQn8LMFSa8kj8Gxb/Lnwzv9A8VctNZ+lfivC/sV3ivW8ElJTERXZoPBRrZKkNKow==}
     engines: {node: '>=4'}
+
+  strip-json-comments@5.0.3:
+    resolution: {integrity: sha512-1tB5mhVo7U+ETBKNf92xT4hrQa3pm0MZ0PQvuDnWgAAGHDsfp4lPSpiS6psrSiet87wyGPh9ft6wmhOMQ0hDiw==}
+    engines: {node: '>=14.16'}
 
   strtok3@10.3.5:
     resolution: {integrity: sha512-ki4hZQfh5rX0QDLLkOCj+h+CVNkqmp/CMf8v8kZpkNVK6jGQooMytqzLZYUVYIZcFZ6yDB70EfD8POcFXiF5oA==}
@@ -1336,8 +1379,8 @@ packages:
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
-  whatsapp-rust-bridge@0.5.3:
-    resolution: {integrity: sha512-Xb3GAgtWQQJ30oI4a4pjM4+YUeli9CMLTwTIewUrb+AJMFElIkiT5uo+j1Zhc+amiV0Jj+LfX76c/EEZirJbGA==}
+  whatsapp-rust-bridge@0.5.5:
+    resolution: {integrity: sha512-Io1qmIEi1FTXTMhN1KmZS35BHHvwRbKHUUcN/Rn6pJUU/Mk469BcWpmFEJY0a6cYu3SHwBsqzC/0IXDj+SUvgA==}
 
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
@@ -1389,6 +1432,8 @@ packages:
     hasBin: true
 
 snapshots:
+
+  '@adiwajshing/keyed-db@0.2.4': {}
 
   '@borewit/text-codec@0.2.2': {}
 
@@ -1523,6 +1568,29 @@ snapshots:
   '@img/sharp-win32-x64@0.34.5':
     optional: true
 
+  '@itsliaaa/baileys@0.3.17(link-preview-js@3.2.0)(sharp@0.34.5)':
+    dependencies:
+      '@adiwajshing/keyed-db': 0.2.4
+      '@cacheable/node-cache': 1.7.6
+      '@hapi/boom': 9.1.4
+      async-mutex: 0.5.0
+      fflate: 0.8.3
+      libsignal: 6.0.0
+      lru-cache: 11.3.5
+      music-metadata: 11.12.3
+      p-queue: 9.1.2
+      pino: 9.14.0
+      protobufjs: 7.5.7
+      sharp: 0.34.5
+      whatsapp-rust-bridge: 0.5.5
+      ws: 8.20.0
+    optionalDependencies:
+      link-preview-js: 3.2.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   '@jsep-plugin/assignment@1.3.0(jsep@1.4.0)':
     dependencies:
       jsep: 1.4.0
@@ -1629,27 +1697,6 @@ snapshots:
   '@types/node@25.6.0':
     dependencies:
       undici-types: 7.19.2
-
-  '@whiskeysockets/baileys@7.0.0-rc10(link-preview-js@3.2.0)(sharp@0.34.5)':
-    dependencies:
-      '@cacheable/node-cache': 1.7.6
-      '@hapi/boom': 9.1.4
-      async-mutex: 0.5.0
-      libsignal: https://codeload.github.com/whiskeysockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7
-      lru-cache: 11.3.5
-      music-metadata: 11.12.3
-      p-queue: 9.1.2
-      pino: 9.14.0
-      protobufjs: 7.5.7
-      sharp: 0.34.5
-      whatsapp-rust-bridge: 0.5.3
-      ws: 8.20.0
-    optionalDependencies:
-      link-preview-js: 3.2.0
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
 
   abort-controller@3.0.0:
     dependencies:
@@ -1852,6 +1899,8 @@ snapshots:
 
   color-name@1.1.4: {}
 
+  colorette@2.0.20: {}
+
   combined-stream@1.0.8:
     dependencies:
       delayed-stream: 1.0.0
@@ -1881,6 +1930,8 @@ snapshots:
   dasu@0.4.3: {}
 
   data-uri-to-buffer@6.0.2: {}
+
+  dateformat@4.6.3: {}
 
   dayjs@1.11.20: {}
 
@@ -2009,9 +2060,15 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  fast-copy@4.0.3: {}
+
   fast-json-patch@3.1.1: {}
 
+  fast-safe-stringify@2.1.1: {}
+
   fclone@1.0.11: {}
+
+  fflate@0.8.3: {}
 
   file-type@16.5.4:
     dependencies:
@@ -2123,6 +2180,8 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  help-me@5.0.0: {}
+
   hookified@1.15.1: {}
 
   hookified@2.1.1: {}
@@ -2192,6 +2251,8 @@ snapshots:
 
   is-number@7.0.0: {}
 
+  joycon@3.1.1: {}
+
   js-git@0.7.8:
     dependencies:
       bodec: 0.1.0
@@ -2222,12 +2283,12 @@ snapshots:
 
   lazy@1.0.11: {}
 
-  libsignal@https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7:
+  libsignal@6.0.0:
     dependencies:
       curve25519-js: 0.0.4
       protobufjs: 7.5.7
 
-  libsignal@https://codeload.github.com/whiskeysockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7:
+  libsignal@https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/bcea72df9ec34d9d9140ab30619cf479c7c144c7:
     dependencies:
       curve25519-js: 0.0.4
       protobufjs: 7.5.7
@@ -2413,6 +2474,26 @@ snapshots:
   pino-abstract-transport@2.0.0:
     dependencies:
       split2: 4.2.0
+
+  pino-abstract-transport@3.0.0:
+    dependencies:
+      split2: 4.2.0
+
+  pino-pretty@13.1.3:
+    dependencies:
+      colorette: 2.0.20
+      dateformat: 4.6.3
+      fast-copy: 4.0.3
+      fast-safe-stringify: 2.1.1
+      help-me: 5.0.0
+      joycon: 3.1.1
+      minimist: 1.2.8
+      on-exit-leak-free: 2.1.2
+      pino-abstract-transport: 3.0.0
+      pump: 3.0.4
+      secure-json-parse: 4.1.0
+      sonic-boom: 4.2.1
+      strip-json-comments: 5.0.3
 
   pino-std-serializers@7.1.0: {}
 
@@ -2630,6 +2711,8 @@ snapshots:
 
   sax@1.6.0: {}
 
+  secure-json-parse@4.1.0: {}
+
   semver@7.5.4:
     dependencies:
       lru-cache: 6.0.0
@@ -2718,6 +2801,8 @@ snapshots:
     dependencies:
       ansi-regex: 3.0.1
 
+  strip-json-comments@5.0.3: {}
+
   strtok3@10.3.5:
     dependencies:
       '@tokenizer/token': 0.3.0
@@ -2793,7 +2878,7 @@ snapshots:
 
   webidl-conversions@3.0.1: {}
 
-  whatsapp-rust-bridge@0.5.3: {}
+  whatsapp-rust-bridge@0.5.5: {}
 
   whatwg-encoding@3.1.1:
     dependencies:

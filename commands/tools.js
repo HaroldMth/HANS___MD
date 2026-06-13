@@ -160,7 +160,7 @@ cmd({
       }, { quoted: mek });
     } catch (primaryErr) {
       console.error("RMBG PRIMARY FAILED, TRYING FALLBACK:", primaryErr.message);
-      const fallbackUrl = `https://api.giftedtech.co.ke/api/tools/removebg?apikey=gifted&url=${encodeURIComponent(imageUrl)}`;
+      const fallbackUrl = `https://api.giftedtech.co.ke/api/tools/removebg?apikey=gifted-api_p1r5icplshukpe2x&url=${encodeURIComponent(imageUrl)}`;
       const { data } = await axios.get(fallbackUrl);
       if (!data.success || !data.result?.image_url) throw new Error("Fallback failed");
       await conn.sendMessage(from, {
@@ -571,7 +571,7 @@ cmd({
   try {
     if (!q) return reply("Yo! Provide JS code to encrypt. Usage: .encryptv3 console.log('hello');");
 
-    const url = `https://api.giftedtech.co.ke/api/tools/encryptv3?apikey=gifted&code=${encodeURIComponent(q)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/encryptv3?apikey=gifted-api_p1r5icplshukpe2x&code=${encodeURIComponent(q)}`;
     const { data } = await axios.get(url);
 
     if (!data.success || !data.result) return reply("❌ Encryption failed.");
@@ -607,7 +607,7 @@ cmd({
   try {
     if (!q) return reply("Yo! Provide HTML to obfuscate. Usage: .htmlobfuscate <h1>Hello</h1>");
 
-    const url = `https://api.giftedtech.co.ke/api/tools/htmlobfuscate?apikey=gifted&html=${encodeURIComponent(q)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/htmlobfuscate?apikey=gifted-api_p1r5icplshukpe2x&html=${encodeURIComponent(q)}`;
     const { data } = await axios.get(url);
 
     if (!data.success || !data.result?.obfuscated) return reply("❌ HTML obfuscation failed.");
@@ -707,7 +707,7 @@ cmd({
       imageUrl = await uploadToCatbox(buffer, hasImage.mimetype);
     }
 
-    const url = `https://api.giftedtech.co.ke/api/tools/readqr?apikey=gifted&url=${encodeURIComponent(imageUrl)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/readqr?apikey=gifted-api_p1r5icplshukpe2x&url=${encodeURIComponent(imageUrl)}`;
     const { data } = await axios.get(url);
 
     if (!data.success || !data.result?.qrcode_data) return reply("❌ No QR code detected.");
@@ -741,7 +741,7 @@ cmd({
   try {
     if (!q) return reply("Yo! Provide text to convert. Usage: .tp Gifted Tech");
 
-    const url = `https://api.giftedtech.co.ke/api/tools/ttp?apikey=gifted&query=${encodeURIComponent(q)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/ttp?apikey=gifted-api_p1r5icplshukpe2x&query=${encodeURIComponent(q)}`;
     const { data } = await axios.get(url);
 
     if (!data.success || !data.image_url) return reply("❌ Text-to-picture failed.");
@@ -779,7 +779,7 @@ cmd({
       text = args.slice(1).join(" ");
     }
 
-    const url = `https://api.giftedtech.co.ke/api/tools/fancyv2?apikey=gifted&text=${encodeURIComponent(text)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/fancyv2?apikey=gifted-api_p1r5icplshukpe2x&text=${encodeURIComponent(text)}`;
     const { data } = await axios.get(url);
 
     if (!data.success || !Array.isArray(data.results)) return reply("❌ Fancy text generation failed.");
@@ -831,7 +831,7 @@ cmd({
   noPrefix: false,
 }, async (conn, mek, m, { from, reply }) => {
   try {
-    const url = "https://api.giftedtech.co.ke/api/tools/proxy?apikey=gifted";
+    const url = "https://api.giftedtech.co.ke/api/tools/proxy?apikey=gifted-api_p1r5icplshukpe2x";
     const { data } = await axios.get(url);
 
     if (!data.success || !Array.isArray(data.results)) return reply("❌ Failed to fetch proxies.");
@@ -872,7 +872,7 @@ cmd({
     if (!q) return reply("Yo! Provide a website URL. Usage: .web2zip https://google.com");
 
     const targetUrl = q.startsWith("http") ? q : `https://${q}`;
-    const url = `https://api.giftedtech.co.ke/api/tools/web2zip?apikey=gifted&url=${encodeURIComponent(targetUrl)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/web2zip?apikey=gifted-api_p1r5icplshukpe2x&url=${encodeURIComponent(targetUrl)}`;
     const { data } = await axios.get(url);
 
     if (!data.success || !data.result?.download_url) return reply("❌ Failed to archive website.");
@@ -913,7 +913,7 @@ cmd({
     if (args.length < 2) return reply("❌ Please provide two emojis separated by space.");
 
     const [emoji1, emoji2] = [args[0], args[1]];
-    const url = `https://api.giftedtech.co.ke/api/tools/emojimix?apikey=gifted&emoji1=${encodeURIComponent(emoji1)}&emoji2=${encodeURIComponent(emoji2)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/emojimix?apikey=gifted-api_p1r5icplshukpe2x&emoji1=${encodeURIComponent(emoji1)}&emoji2=${encodeURIComponent(emoji2)}`;
 
     await conn.sendMessage(from, {
       image: { url: url },
@@ -938,7 +938,7 @@ cmd({
   try {
     if (!q) return reply("Yo! Provide code to screenshot. Usage: .carbon console.log('hello world')");
 
-    const url = `https://api.giftedtech.co.ke/api/tools/carbon?apikey=gifted&code=${encodeURIComponent(q)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/carbon?apikey=gifted-api_p1r5icplshukpe2x&code=${encodeURIComponent(q)}`;
     const { data } = await axios.get(url);
 
     if (!data.success || !data.result?.image) return reply("❌ Carbon screenshot failed.");
@@ -967,7 +967,7 @@ cmd({
   try {
     if (!q) return reply("Yo! Provide text for QR code. Usage: .createqr Hello World");
 
-    const url = `https://api.giftedtech.co.ke/api/tools/createqr?apikey=gifted&query=${encodeURIComponent(q)}`;
+    const url = `https://api.giftedtech.co.ke/api/tools/createqr?apikey=gifted-api_p1r5icplshukpe2x&query=${encodeURIComponent(q)}`;
     await conn.sendMessage(from, {
       image: { url: url },
       caption: `╭━═ 『 *QR CREATED* 』 ═━╮\n┃ 📱 *Data:* ${q}\n╰━━━━━━━━━━━━━━━━━━╯\n\n🚀 *${config.BOT_NAME}*`,

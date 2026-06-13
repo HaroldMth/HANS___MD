@@ -1,7 +1,13 @@
 const { cmd } = require("../command");
 const { getContext } = require("../lib/newsletter");
 const { getDB, saveGlobal } = require("../lib/database");
-const { downloadMediaMessage, downloadContentFromMessage } = require("@whiskeysockets/baileys");
+const {
+  downloadContentFromMessage,
+  generateWAMessageContent,
+  generateWAMessageFromContent
+} = require("@whiskeysockets/baileys");
+
+const crypto = require("crypto");
 const {
   startBulkOp,
   cancelBulkOp,
@@ -1461,197 +1467,170 @@ cmd(
     alias: ["gstatus", "groupstatus", "gstory"],
     category: "group",
     react: "📸",
-    desc: "Post any text, photo, video, or audio as a group status (auto-detects type)",
-    usage: ".togstatus [caption] | reply to media/text | send media with .togstatus in caption | .togstatus <url>",
-    noPrefix: false
+    desc: "Post any text, photo, video, or audio as a group status",
+    usage: ".togstatus [caption] | reply to media",
   },
-  async (conn, mek, m, { isGroup, isAdmin, isBotAdmin, from, reply, q, args, quoted }) => {
-    if (!requireGroup(isGroup, reply)) return;
-    if (!requireAdmin(isAdmin, reply)) return;
-    if (!requireBotAdmin(isBotAdmin, reply)) return;
+  async (conn, mek, m, { text, quoted, isGroup, groupMetadata }) => {
+    if (!isGroup) return m.reply("❌ This command only works in groups.");
 
-    function unwrapMessage(message) {
-      if (!message) return null;
-      if (message.viewOnceMessage?.message) return unwrapMessage(message.viewOnceMessage.message);
-      if (message.viewOnceMessageV2?.message) return unwrapMessage(message.viewOnceMessageV2.message);
-      if (message.viewOnceMessageV2Extension?.message) return unwrapMessage(message.viewOnceMessageV2Extension.message);
-      if (message.documentWithCaptionMessage?.message) return unwrapMessage(message.documentWithCaptionMessage.message);
-      if (message.ephemeralMessage?.message) return unwrapMessage(message.ephemeralMessage.message);
-      return message;
-    }
-
-    function mediaKindFromType(type, msg) {
-      if (!type) return null;
-      if (type === "imageMessage" || type === "stickerMessage") return "image";
-      if (type === "videoMessage") return "video";
-      if (type === "audioMessage" || type === "pttMessage") return "audio";
-      if (type === "conversation" || type === "extendedTextMessage") return "text";
-      if (type === "documentMessage" && msg?.mimetype) {
-        if (msg.mimetype.startsWith("image/")) return "image";
-        if (msg.mimetype.startsWith("video/")) return "video";
-        if (msg.mimetype.startsWith("audio/")) return "audio";
-      }
-      return null;
-    }
-
-    function guessTypeFromUrl(url) {
-      const base = String(url || "").toLowerCase().split("?")[0];
-      if (/\.(jpe?g|png|gif|webp|bmp|heic)$/i.test(base)) return "image";
-      if (/\.(mp4|mov|webm|mkv|avi)$/i.test(base)) return "video";
-      if (/\.(mp3|ogg|wav|m4a|opus|aac|flac)$/i.test(base)) return "audio";
-      return null;
-    }
-
-    function isHttpUrl(value) {
-      return /^https?:\/\//i.test(String(value || "").trim());
-    }
-
-    async function notifyGroup(statusMsg) {
-      const { generateWAMessageFromContent } = require("@whiskeysockets/baileys");
-      const groupMsg = await generateWAMessageFromContent(from, {
-        groupStatusMessageV2: { message: statusMsg.message }
-      }, { quoted: mek });
-      await conn.relayMessage(from, groupMsg.message, { messageId: groupMsg.key.id });
-    }
-
-    // Strip legacy type keywords if user still uses old syntax
-    const legacyTypes = ["image", "video", "audio", "text", "add"];
-    let captionOrText = q.trim();
-    if (legacyTypes.includes((args[0] || "").toLowerCase())) {
-      const keyword = args[0].toLowerCase();
-      if (keyword === "add" && args.length > 1 && legacyTypes.includes(args[1].toLowerCase())) {
-        captionOrText = args.slice(2).join(" ").trim();
-      } else {
-        captionOrText = args.slice(1).join(" ").trim();
-      }
-    }
-
-    const currentMsg = unwrapMessage(mek.message);
-    const quotedType = quoted?.type || quoted?.mtype || "";
-    const quotedKind = quoted ? mediaKindFromType(quotedType, quoted.msg) : null;
-    const currentKind = mediaKindFromType(
-      currentMsg?.imageMessage ? "imageMessage" :
-      currentMsg?.videoMessage ? "videoMessage" :
-      currentMsg?.audioMessage ? "audioMessage" : null,
-      currentMsg?.imageMessage || currentMsg?.videoMessage || currentMsg?.audioMessage
+    const groupJid = mek.key.remoteJid;
+    const caption = text?.trim() || "";
+    const msg = mek;
+    const msgType = Object.keys(msg.message || {}).find(
+      (k) => k !== "messageContextInfo" && k !== "senderKeyDistributionMessage"
     );
 
-    let type = null;
-    let buffer = null;
-    let text = "";
-    let caption = "";
+    const directMediaTypes = [
+      "imageMessage",
+      "videoMessage",
+      "audioMessage",
+      "stickerMessage",
+      "documentMessage",
+    ];
+    const isDirectMedia = directMediaTypes.includes(msgType);
+
+    const rawCtx =
+      msg.message?.extendedTextMessage?.contextInfo ||
+      (msgType && msg.message?.[msgType]?.contextInfo) ||
+      null;
+
+    const quotedMsg = rawCtx?.quotedMessage || null;
+    const quotedType = quotedMsg ? Object.keys(quotedMsg)[0] : null;
+
+    if (!isDirectMedia && !quotedMsg && !caption) {
+      return m.reply(
+        '❌ Nothing to post!\n\n' +
+          'Usage:\n' +
+          '• Reply to an image/video/audio/text with `.togstatus [optional caption]`\n' +
+          '• Send an image/video with `.togstatus` as the caption\n' +
+          '• `.togstatus your text here`'
+      );
+    }
 
     try {
-      // 1) Reply to media
-      if (quotedKind && quotedKind !== "text") {
-        type = quotedKind;
-        caption = captionOrText;
-        try {
-          buffer = await quoted.download();
-        } catch (dlErr) {
-          console.error("[togstatus] quoted download failed:", dlErr.message);
-          return reply("❌ Failed to download replied media. Forward it again or re-send the file.");
-        }
-        if (!buffer?.length) return reply("❌ Downloaded media is empty.");
-      }
-      // 2) Message sent with media + command in caption
-      else if (currentKind) {
-        type = currentKind;
-        caption = captionOrText;
-        buffer = await downloadMediaMessage(
-          mek,
-          "buffer",
-          {},
-          { reuploadRequest: conn.updateMediaMessage }
-        );
-        if (!buffer?.length) return reply("❌ Failed to read attached media.");
-      }
-      // 3) Reply to text
-      else if (quotedKind === "text") {
-        type = "text";
-        text = captionOrText || quoted.body || "";
-      }
-      // 4) URL in args
-      else if (isHttpUrl(captionOrText)) {
-        const url = captionOrText.trim();
-        type = guessTypeFromUrl(url);
-        if (!type) return reply("⚠️ Could not detect media type from URL. Use a direct link ending in .jpg, .mp4, .mp3, etc.");
-        buffer = { url };
-      }
-      // 5) Plain text status
-      else if (captionOrText) {
-        type = "text";
-        text = captionOrText;
+      let payload = null;
+      let mediaType = "Text";
+
+      if (isDirectMedia) {
+        payload = await buildPayload({ [msgType]: msg.message[msgType] }, msgType);
+        mediaType = labelFromType(msgType);
+        if (caption && payload && (payload.image || payload.video)) payload.caption = caption;
+      } else if (quotedMsg) {
+        payload = await buildPayload(quotedMsg, quotedType);
+        mediaType = labelFromType(quotedType);
+        if (caption && payload && (payload.image || payload.video)) payload.caption = caption;
+      } else {
+        const body = caption || quoted?.body || quoted?.text || "";
+        payload = { text: body };
+        mediaType = "Text";
       }
 
-      if (!type) {
-        return reply(
-          "📸 *Group Status*\n\n" +
-          "Send any of these — type is detected automatically:\n\n" +
-          "• Reply to a *photo, video, voice, or text* → `.togstatus`\n" +
-          "• Reply with a caption → `.togstatus your caption`\n" +
-          "• Send media with `.togstatus` in the caption\n" +
-          "• Text status → `.togstatus Hello everyone!`\n" +
-          "• From URL → `.togstatus https://.../photo.jpg`"
-        );
+      if (!payload) {
+        return m.reply("❌ Failed to process that message type.");
       }
 
-      const { generateWAMessageFromContent } = require("@whiskeysockets/baileys");
-      const statusJidList = [from, conn.user.id];
-
-      if (type === "text") {
-        if (!text) return reply("⚠️ Provide text for the status.\nExample: `.togstatus Hello group!`");
-
-        const statusMsg = await generateWAMessageFromContent("status@broadcast", {
-          extendedTextMessage: {
-            text,
-            backgroundArgb: 0xff5733ff,
-            font: 3
-          }
-        }, { statusJidList: [from] });
-        await conn.relayMessage("status@broadcast", statusMsg.message, {
-          messageId: statusMsg.key.id,
-          statusJidList: [from]
-        });
-        await notifyGroup(statusMsg);
-        return reply("✅ Text group status posted!");
-      }
-
-      if (type === "image") {
-        const statusMsg = await conn.sendMessage(
-          "status@broadcast",
-          { image: buffer, caption },
-          { statusJidList, broadcast: true }
-        );
-        await notifyGroup(statusMsg);
-        return reply("✅ Image group status posted!");
-      }
-
-      if (type === "video") {
-        const statusMsg = await conn.sendMessage(
-          "status@broadcast",
-          { video: buffer, caption },
-          { statusJidList, broadcast: true }
-        );
-        await notifyGroup(statusMsg);
-        return reply("✅ Video group status posted!");
-      }
-
-      if (type === "audio") {
-        const statusMsg = await conn.sendMessage(
-          "status@broadcast",
-          { audio: buffer, mimetype: "audio/mp4" },
-          { statusJidList, broadcast: true }
-        );
-        await notifyGroup(statusMsg);
-        return reply("✅ Audio group status posted!");
-      }
-    } catch (err) {
-      console.error("[togstatus] ❌ Error:", err.message, err.stack);
-      await reply(`❌ Failed to post group status.\n\n*Error:* ${err.message || err}`);
+      await sendGroupStatus(conn, groupJid, payload);
+      m.reply(
+        `✅ ${mediaType} posted to group status!${payload.caption ? `\n📝 "${payload.caption}"` : ""}`
+      );
+    } catch (e) {
+      console.error("[TOGSTATUS]", e);
+      m.reply(`❌ Failed: ${e.message}`);
     }
   }
 );
+
+async function buildPayload(rawMessage, type) {
+  if (!type || !rawMessage) return null;
+
+  if (type === "imageMessage") {
+    const buffer = await downloadMedia(rawMessage.imageMessage, "image");
+    return {
+      image: buffer,
+      caption: rawMessage.imageMessage?.caption || "",
+      mimetype: rawMessage.imageMessage?.mimetype || "image/jpeg",
+    };
+  }
+
+  if (type === "videoMessage") {
+    const buffer = await downloadMedia(rawMessage.videoMessage, "video");
+    return {
+      video: buffer,
+      caption: rawMessage.videoMessage?.caption || "",
+      gifPlayback: rawMessage.videoMessage?.gifPlayback || false,
+      mimetype: rawMessage.videoMessage?.mimetype || "video/mp4",
+    };
+  }
+
+  if (type === "stickerMessage") {
+    const buffer = await downloadMedia(rawMessage.stickerMessage, "sticker");
+    return {
+      image: buffer,
+      caption: rawMessage.stickerMessage?.caption || "",
+      mimetype: rawMessage.stickerMessage?.mimetype || "image/webp",
+    };
+  }
+
+  if (type === "audioMessage") {
+    const buffer = await downloadMedia(rawMessage.audioMessage, "audio");
+    return {
+      audio: buffer,
+      mimetype: rawMessage.audioMessage?.mimetype || "audio/mpeg",
+      ptt: rawMessage.audioMessage?.ptt || false,
+    };
+  }
+
+  if (type === "conversation" || type === "extendedTextMessage") {
+    const body = rawMessage.conversation || rawMessage.extendedTextMessage?.text || "";
+    return { text: body };
+  }
+
+  return null;
+}
+
+async function downloadMedia(message, type) {
+  const stream = await downloadContentFromMessage(message, type);
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+function labelFromType(type) {
+  const map = {
+    imageMessage: "Image",
+    videoMessage: "Video",
+    stickerMessage: "Sticker",
+    audioMessage: "Audio",
+    conversation: "Text",
+    extendedTextMessage: "Text",
+  };
+  return map[type] || "Media";
+}
+
+async function sendGroupStatus(conn, jid, content) {
+  const inside = await generateWAMessageContent(content, {
+    upload: conn.waUploadToServer,
+  });
+
+  const messageSecret = crypto.randomBytes(32);
+
+  const message = generateWAMessageFromContent(
+    jid,
+    {
+      messageContextInfo: { messageSecret },
+      groupStatusMessageV2: {
+        message: {
+          ...inside,
+          messageContextInfo: { messageSecret },
+        },
+      },
+    },
+    {}
+  );
+
+  await conn.relayMessage(jid, message.message, { messageId: message.key.id });
+  return message;
+}
 
 module.exports = {};
 

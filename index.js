@@ -3,17 +3,16 @@ const path = require("path");
 const axios = require("axios");
 const { Agent } = require("https");
 const pino = require("pino");
-
+const pretty = require("pino-pretty")
 const config = require("./config");
 const serialize = require("./lib/serialize");
 const handler = require("./lib/handler");
 const { loadCommands } = require("./lib/loader");
-const { loadThumb } = require("./lib/newsletter");
 const { cleanExpired, storeMessage, getStoredMessage, getDB } = require("./lib/database");
 const { CURRENT_VERSION } = require("./lib/version");
 const { sendTG } = require("./lib/tg_report");
 
-const logger = pino({ level: "info" });
+const logger = pino({ level: "info" }, pretty({ colorize: true }));
 let presenceInterval = null; // Global to manage single interval
 const GROUP_EVENT_DEDUPE = new Map();
 
@@ -141,9 +140,11 @@ async function startBot() {
   const baileys = await import("@whiskeysockets/baileys");
   const {
     makeWASocket,
+    getContentType,
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
     DisconnectReason,
+    jidNormalizedUser,
     Browsers,
     makeCacheableSignalKeyStore
   } = baileys;
@@ -175,12 +176,10 @@ async function startBot() {
     }
   });
 
-  // Store outgoing messages to facilitate retries (decryption fix)
+  // Store incoming and outgoing messages to facilitate retries and chat history for summarize
   conn.ev.on("messages.upsert", async ({ messages, type }) => {
     for (const msg of messages) {
-       if (msg.key.fromMe) {
-          storeMessage(msg);
-       }
+       storeMessage(msg);
     }
   });
 
@@ -299,7 +298,6 @@ async function startBot() {
 
   conn.ev.on("creds.update", saveCreds);
 
-  await loadThumb();
   loadCommands();
 
   cleanExpired();
@@ -307,106 +305,217 @@ async function startBot() {
     cleanExpired();
   }, 6 * 60 * 60 * 1000);
 
-  conn.ev.on("messages.upsert", async ({ messages, type }) => {
-    if (type !== "notify") return;
-    for (const mek of messages) {
-      if (!mek.message) continue;
-      
-      // Handle status messages (auto-read and react) if enabled
-      const db = getDB();
-      const autoStatus = db.env?.AUTO_STATUS !== undefined ? db.env.AUTO_STATUS : config.AUTO_STATUS;
-      const autoStatusLike = db.env?.AUTO_STATUS_LIKE !== undefined ? db.env.AUTO_STATUS_LIKE : config.AUTO_STATUS_LIKE;
-      if (mek.key.remoteJid === "status@broadcast" && !mek.key.fromMe && (autoStatus || autoStatusLike)) {
-        try {
-          if (autoStatus) {
-            console.log("[STATUS] Auto-reading status from:", mek.key.participant || mek.key.remoteJid);
-            await conn.readMessages([mek.key]);
-          }
-          if (autoStatusLike) {
-            const statusOwnerJid = mek.key.participant || mek.key.remoteJid;
-            console.log("[STATUS LIKE] Attempting react → status@broadcast | owner:", statusOwnerJid);
-            await conn.sendMessage(
-              "status@broadcast",
-              { react: { text: "❤️", key: mek.key } },
-              { statusJidList: [statusOwnerJid, conn.user.id] }
-            ).then(() => {
-              console.log("[STATUS LIKE] ✅ React sent successfully to status of:", statusOwnerJid);
-            }).catch((err) => {
-              console.error("[STATUS LIKE] ❌ React failed:", err.message);
-            });
-          }
-        } catch (error) {
-          console.error("[STATUS] ❌ Unexpected error in status handler:", error.message);
-        }
-        continue;
-      }
-      
-      // Skip messages sent before the bot started (avoids re-running old commands on reconnect)
-      const m = await serialize(mek, conn);
-      await handler(conn, mek, m);
+conn.ev.on("messages.upsert", async ({ messages, type }) => {
+  if (type !== "notify") return;
+  for (const mek of messages) {
+    if (!mek.message) continue;
 
-      const antiDel = db.env?.ANTI_DELETE !== undefined ? db.env.ANTI_DELETE : config.ANTI_DELETE;
-      if (antiDel) {
-        storeMessage(mek);
+    // Unwrap ephemeral/viewOnce wrappers
+    mek.message = (getContentType(mek.message) === "ephemeralMessage")
+      ? mek.message.ephemeralMessage.message
+      : mek.message;
+
+    const db = getDB();
+    console.log("[STATUS DEBUG]", JSON.stringify(mek.key, null, 2))
+    
+    // ─── CONFIG (db.env with config fallback) ───────────────────────────────
+    const autoStatus     = db.env?.AUTO_STATUS      ?? config.AUTO_STATUS;
+    const autoStatusLike = db.env?.AUTO_STATUS_LIKE  ?? config.AUTO_STATUS_LIKE;
+    const autoReply      = db.env?.AUTO_REPLY_STATUS ?? config.AUTO_REPLY_STATUS;
+    const autoReplyText  = db.env?.AUTO_REPLY_TEXT   ?? config.AUTO_REPLY_TEXT;
+    const antiDel        = db.env?.ANTI_DELETE       ?? config.ANTI_DELETE;
+
+    // ─── EMOJI POOL ──────────────────────────────────────────────────────────
+    const emojis = [
+      "❤️","💸","😇","🍂","💥","💯","🔥","💫","💎","💗","🤍","🖤","👀",
+      "🙌","🚩","🥰","💐","😎","🤎","✅","🧡","😁","🌸","🕊️","🌷","⛅",
+      "🌟","🗿","💜","💙","🌝","🎎","🎏","🎐","⚽","🌿","🌚","🦋","🍓",
+      "🍫","🍭","🧁","🧃","🍿","🎀","🧸","👑","😳","💀","☠️","👻","♥️",
+    ];
+
+    // ─── STATUS HANDLER ──────────────────────────────────────────────────────
+    if (mek.key.remoteJid === "status@broadcast" && !mek.key.fromMe) {
+      const statusOwnerJid = mek.key.participant || mek.key.remoteJid;
+
+      try {
+        // 1. Auto-read
+        if (autoStatus) {
+          console.log("[STATUS] Auto-reading status from:", statusOwnerJid);
+          await conn.readMessages([mek.key]);
+        }
+
+        // 2. Auto-react (random emoji)
+  if (autoStatusLike) {
+  const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)]
+  const dlike = jidNormalizedUser(conn.user.id)
+  
+  // ✅ use participantAlt (PN) instead of participant (LID)
+  const statusOwnerPN = mek.key.participantAlt || mek.key.remoteJidAlt || statusOwnerJid
+  await conn.sendMessage(
+    "status@broadcast",
+    { react: { text: randomEmoji, key: mek.key } },
+    { statusJidList: [statusOwnerPN, dlike] }
+  ).then(() => {
+    console.log("[STATUS DEBUG]", JSON.stringify(mek.key, null, 2))
+
+    console.log("[STATUS LIKE] ✅ React sent to:", statusOwnerPN)
+  }).catch((err) => {
+    console.error("[STATUS LIKE] ❌ React failed:", err.message)
+  })
+}
+
+        // 3. Auto-reply (DM the status poster)
+        if (autoReply && autoReplyText) {
+          console.log("[STATUS REPLY] Sending auto-reply to:", statusOwnerJid);
+          await conn.sendMessage(
+            statusOwnerJid,
+            { text: autoReplyText },
+            { quoted: mek }
+          ).then(() => {
+            console.log("[STATUS REPLY] ✅ Reply sent to:", statusOwnerJid);
+          }).catch((err) => {
+            console.error("[STATUS REPLY] ❌ Reply failed:", err.message);
+          });
+        }
+
+      } catch (error) {
+        console.error("[STATUS] ❌ Unexpected error:", error.message);
+      }
+
+      continue; // Don't process status messages as commands
+    }
+
+    // ─── NEWSLETTER REACTION ─────────────────────────────────────────────────
+    const newsletterJids = db.env?.NEWSLETTER_JIDS ?? config.NEWSLETTER_JIDS ?? [];
+    if (mek.key && newsletterJids.includes(mek.key.remoteJid)) {
+      try {
+        const serverId = mek.newsletterServerId;
+        if (serverId) {
+          const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+          console.log("[NEWSLETTER] Reacting with", randomEmoji, "→", mek.key.remoteJid);
+          await conn.newsletterReactMessage(
+            mek.key.remoteJid,
+            serverId.toString(),
+            randomEmoji
+          );
+        }
+      } catch (e) {
+        console.error("[NEWSLETTER] ❌ React failed:", e.message);
       }
     }
-  });
+
+    // ─── NORMAL MESSAGE PIPELINE ─────────────────────────────────────────────
+    const m = await serialize(mek, conn);
+    await handler(conn, mek, m);
+
+    if (antiDel) {
+      storeMessage(mek);
+    }
+  }
+});
 
   conn.ev.on("messages.update", async (updates) => {
-    const db = getDB();
-    const antiDel = db.env?.ANTI_DELETE !== undefined ? db.env.ANTI_DELETE : config.ANTI_DELETE;
-    if (!antiDel) return;
-    for (const update of updates) {
-      const protocolMessage = update?.update?.message?.protocolMessage;
-      const revokedKey = protocolMessage?.key;
-      const isDeleted =
-        update?.update?.message === null ||
-        (!!protocolMessage &&
-          (protocolMessage.type === 0 || protocolMessage.type === "REVOKE" || !!revokedKey?.id));
-      if (!isDeleted) continue;
+  const db = getDB();
+  const antiDel = db.env?.ANTI_DELETE !== undefined ? db.env.ANTI_DELETE : config.ANTI_DELETE;
+  if (!antiDel) return;
 
-      const deletedMessageId = revokedKey?.id || update?.key?.id;
-      const stored = getStoredMessage(deletedMessageId);
-      if (!stored) continue;
+  for (const update of updates) {
+    const protocolMessage = update?.update?.message?.protocolMessage;
+    const revokedKey = protocolMessage?.key;
+    const isDeleted =
+      update?.update?.message === null ||
+      (!!protocolMessage &&
+        (protocolMessage.type === 0 || protocolMessage.type === "REVOKE" || !!revokedKey?.id));
+    if (!isDeleted) continue;
 
-      const mode = typeof antiDel === "string" ? antiDel.toLowerCase() : (antiDel === true ? "dm" : "off");
-      if (mode === "off") continue;
+    const deletedMessageId = revokedKey?.id || update?.key?.id;
+    const stored = getStoredMessage(deletedMessageId);
+    if (!stored) continue;
 
-      const reportText = `╭━━━═ 『 *ANTI-DELETE* 』 ═━━━╮\n` +
-                        `┃ 🗑️ *Status:* Recovered\n` +
-                        `┃ 👤 *From:* @${(stored.sender || "").split("@")[0]}\n` +
-                        `┃ 📍 *Source:* ${(stored.from || "").endsWith("@g.us") ? "Group Message" : "Private Chat"}\n` +
-                        `┃ 📅 *Date:* ${new Date(stored.timestamp).toLocaleDateString()}\n` +
-                        `┃ ⏰ *Time:* ${new Date(stored.timestamp).toLocaleTimeString()}\n` +
-                        `┃ 📦 *Type:* ${(stored.type || "unknown").toUpperCase()}\n` +
-                        `╰━━━━━━━━━━══━━━━━━━━━━╯\n\n` +
-                        `*『 ORIGINAL MESSAGE 』*\n` +
-                        `━━━━━━━━━━━━━━━━━━\n` +
-                        `${stored.body}\n` +
-                        `━━━━━━━━━━━━━━━━━━`;
+    const mode = typeof antiDel === "string" ? antiDel.toLowerCase() : (antiDel === true ? "dm" : "off");
+    if (mode === "off") continue;
 
-      const contextInfo = {
-        ...require("./lib/newsletter").getContext({
-          title: "🚨 Message Intercepted 🚨",
-          body: `Source: ${stored.from}`
-        }),
-        mentionedJid: [stored.sender]
-      };
+    const reportText =
+      `╭━━━═ 『 *ANTI-DELETE* 』 ═━━━╮\n` +
+      `┃ 🗑️ *Status:* Recovered\n` +
+      `┃ 👤 *From:* @${(stored.sender || "").split("@")[0]}\n` +
+      `┃ 📍 *Source:* ${(stored.from || "").endsWith("@g.us") ? "Group Message" : "Private Chat"}\n` +
+      `┃ 📅 *Date:* ${new Date(stored.timestamp).toLocaleDateString()}\n` +
+      `┃ ⏰ *Time:* ${new Date(stored.timestamp).toLocaleTimeString()}\n` +
+      `┃ 📦 *Type:* ${(stored.type || "unknown").toUpperCase()}\n` +
+      `╰━━━━━━━━━━══━━━━━━━━━━╯\n\n` +
+      `*『 ORIGINAL MESSAGE 』*\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `${stored.body || stored.caption || "[media] Will be sent next."}\n` +
+      `━━━━━━━━━━━━━━━━━━`;
 
-      // 1. Send to Owner DM (if mode is 'dm' or 'both')
-      if (mode === "dm" || mode === "both") {
-        for (const ownerNumber of config.OWNER_NUMBER) {
-          const ownerJid = `${ownerNumber}@s.whatsapp.net`;
-          await conn.sendMessage(ownerJid, { text: reportText, contextInfo }).catch(() => {});
+    const contextInfo = {
+      ...require("./lib/newsletter").getContext({
+        title: "🚨 Message Intercepted 🚨",
+        body: `Source: ${stored.from}`
+      }),
+      mentionedJid: [stored.sender]
+    };
+
+    // Build target JIDs
+    const targets = [];
+    if (mode === "dm" || mode === "both")
+      for (const n of config.OWNER_NUMBER) targets.push(`${n}@s.whatsapp.net`);
+    if (mode === "group" || mode === "both")
+      targets.push(stored.from);
+
+    // Send report text
+    for (const jid of targets) {
+      await conn.sendMessage(jid, { text: reportText, contextInfo }).catch(() => {});
+    }
+
+    // Send media if applicable
+    const textTypes = ["conversation", "extendedTextMessage"];
+    if (stored.fullMessage && !textTypes.includes(stored.type)) {
+      try {
+        const { downloadMediaMessage } = require("@whiskeysockets/baileys");
+
+        const buffer = await downloadMediaMessage(
+          { message: stored.fullMessage, key: { remoteJid: stored.from, id: deletedMessageId } },
+          "buffer",
+          {},
+          { reuploadRequest: conn.updateMediaMessage }
+        );
+
+        const t = stored.type;
+        let mediaPayload = null;
+
+        if (t === "imageMessage") {
+          mediaPayload = { image: buffer, caption: stored.caption || "" };
+        } else if (t === "videoMessage") {
+          mediaPayload = { video: buffer, caption: stored.caption || "" };
+        } else if (t === "audioMessage") {
+          mediaPayload = {
+            audio: buffer,
+            mimetype: "audio/mp4",
+            ptt: stored.fullMessage.audioMessage?.ptt || false
+          };
+        } else if (t === "stickerMessage") {
+          mediaPayload = { sticker: buffer };
+        } else if (t === "documentMessage") {
+          mediaPayload = {
+            document: buffer,
+            mimetype: stored.fullMessage.documentMessage?.mimetype,
+            fileName: stored.fullMessage.documentMessage?.fileName || "file"
+          };
         }
-      }
 
-      // 2. Send to Group/Source (if mode is 'group' or 'both')
-      if (mode === "group" || mode === "both") {
-        await conn.sendMessage(stored.from, { text: reportText, contextInfo }).catch(() => {});
+        if (mediaPayload) {
+          for (const jid of targets) {
+            await conn.sendMessage(jid, mediaPayload).catch(() => {});
+          }
+        }
+      } catch (e) {
+        console.error("[ANTI-DEL] Media forward failed:", e.message);
       }
     }
-  });
+  }
+});
 
   conn.ev.on("group-participants.update", async (update) => {
     try {

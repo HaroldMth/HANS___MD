@@ -173,6 +173,141 @@ cmd(
 
 cmd(
   {
+    pattern: "vv2",
+    alias: ["viewonce2"],
+    react: "??",
+    desc: "Extract media from view-once messages and send to owner DM",
+    category: "utility",
+    usage: ".vv2 (reply to view-once)",
+    noPrefix: false,
+  },
+  async (conn, mek, m, { from, reply, sender }) => {
+    try {
+      const ctx =
+        mek?.message?.extendedTextMessage?.contextInfo ||
+        mek?.message?.imageMessage?.contextInfo ||
+        mek?.message?.videoMessage?.contextInfo ||
+        mek?.message?.documentMessage?.contextInfo ||
+        null;
+
+      if (!ctx?.quotedMessage) {
+        return;
+      }
+
+      const quotedMsg = ctx.quotedMessage;
+
+      const voInner =
+        quotedMsg?.viewOnceMessage?.message ||
+        quotedMsg?.viewOnceMessageV2?.message ||
+        quotedMsg?.viewOnceMessageV2Extension?.message ||
+        quotedMsg;
+
+      const hasImage = voInner?.imageMessage;
+      const hasVideo = voInner?.videoMessage;
+      const hasAudio = voInner?.audioMessage;
+
+      if (!hasImage && !hasVideo && !hasAudio) {
+        return;
+      }
+
+      const quotedKey = {
+        remoteJid: mek?.key?.remoteJid,
+        fromMe: false,
+        id: ctx.stanzaId,
+        participant: ctx.participant,
+      };
+
+      if (hasImage) hasImage.viewOnce = false;
+      if (hasVideo) hasVideo.viewOnce = false;
+      if (hasAudio) hasAudio.viewOnce = false;
+
+      const quotedMek = {
+        key: quotedKey,
+        message: voInner,
+      };
+
+      let buffer;
+      try {
+        buffer = await downloadMediaMessage(
+          quotedMek,
+          "buffer",
+          {},
+          { reuploadRequest: conn.updateMediaMessage }
+        );
+      } catch {
+        try {
+          const mediaInfo = hasImage || hasVideo || hasAudio;
+          const mediaType = hasImage ? "image" : hasVideo ? "video" : "audio";
+          const stream = await downloadContentFromMessage(mediaInfo, mediaType);
+          const chunks = [];
+          for await (const chunk of stream) chunks.push(chunk);
+          buffer = Buffer.concat(chunks);
+        } catch (err2) {
+          console.error("[VV2 FALLBACK ERROR]", err2);
+          return;
+        }
+      }
+
+      if (!buffer?.length) {
+        return;
+      }
+
+      const ownerNumber = config.OWNER_NUMBER[0];
+      const ownerJid = `${ownerNumber}@s.whatsapp.net`;
+
+      const contextInfo = getContext({
+        mentionedJid: [sender],
+        forwardingScore: 999,
+        isForwarded: true,
+      });
+
+      // Send image to owner
+      if (hasImage) {
+        const caption = hasImage.caption || `View-once image from ${sender}`;
+        await conn.sendMessage(ownerJid, {
+          image: buffer,
+          mimetype: hasImage.mimetype || "image/jpeg",
+          caption,
+          contextInfo,
+        });
+      }
+
+      // Send video + extract audio to owner
+      if (hasVideo) {
+        const caption = hasVideo.caption || `View-once video from ${sender}`;
+        await conn.sendMessage(ownerJid, {
+          video: buffer,
+          mimetype: hasVideo.mimetype || "video/mp4",
+          caption,
+          contextInfo,
+        });
+        await conn.sendMessage(ownerJid, {
+          audio: buffer,
+          mimetype: "audio/mp4",
+          ptt: false,
+          contextInfo,
+        });
+      }
+
+      // Send audio to owner
+      if (hasAudio) {
+        const isVoice = hasAudio.ptt === true;
+        await conn.sendMessage(ownerJid, {
+          audio: buffer,
+          mimetype: hasAudio.mimetype || "audio/ogg; codecs=opus",
+          ptt: isVoice,
+          contextInfo,
+        });
+      }
+    } catch (err) {
+      console.error("[VV2 ERROR]", err);
+      return;
+    }
+  }
+);
+
+cmd(
+  {
     pattern: "ccgen",
     alias: ["cardgen", "creditcardgen", "ccgenerate", "ccgenerator"],
     react: "💳",

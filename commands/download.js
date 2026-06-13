@@ -19,7 +19,7 @@ cmd(
       if (!q) return reply("❌ *Please enter the app name to search and download.*");
 
       // Searching and downloading using GiftedTech API
-      const api = `https://api.giftedtech.co.ke/api/download/apkdl?apikey=gifted&appName=${encodeURIComponent(q)}`;
+      const api = `https://api.giftedtech.co.ke/api/download/apkdl?apikey=gifted-api_p1r5icplshukpe2x&appName=${encodeURIComponent(q)}`;
       const { data: json } = await axios.get(api);
 
       if (!json.success || !json.result?.download_url) {
@@ -114,7 +114,7 @@ cmd({
     }, { quoted: mek });
 
     // Use download API with the found URL
-    const dlUrl = `https://apis.davidcyril.name.ng/download/ytv3?url=${encodeURIComponent(video.url)}&format=mp3`;
+    const dlUrl = `https://api.giftedtech.co.ke/api/download/ytaudio?apikey=gifted-api_p1r5icplshukpe2x&url=${encodeURIComponent(video.url)}`;
     const { data: dlData } = await axios.get(dlUrl);
 
     if (!dlData.success || !dlData.result) return reply("❌ *Audio extraction failed.* Try again.");
@@ -151,8 +151,8 @@ cmd({
     const video = results.videos[0];
     if (!video) return reply("❌ *No video found.*");
 
-    // Get the MP4 download link via ytv3
-    const dlUrl = `https://apis.davidcyril.name.ng/download/ytv3?url=${encodeURIComponent(video.url)}&format=mp4`;
+    // Get the MP4 download link via GiftedTech
+    const dlUrl = `https://api.giftedtech.co.ke/api/download/ytvideo?apikey=gifted-api_p1r5icplshukpe2x&url=${encodeURIComponent(video.url)}`;
     const { data: dData } = await axios.get(dlUrl);
 
     if (!dData.success || !dData.result) return reply("❌ *Download extraction failed.*");
@@ -198,7 +198,7 @@ cmd({
     
     await reply(`╭━═『 *AUDIO CORE* 』━╮\n┃ 📡 *Source:* Direct URL\n┃ ⏳ *Status:* Fetching MP3...\n╰━━━━━━━━━━━━━━╯`);
 
-    const apiUrl = `https://apis.davidcyril.name.ng/download/ytv3?url=${encodeURIComponent(q)}&format=mp3`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/download/ytaudio?apikey=gifted-api_p1r5icplshukpe2x&url=${encodeURIComponent(q)}`;
     const { data } = await axios.get(apiUrl);
 
     if (!data.success || !data.result) return reply("❌ *Extraction failed.* Invalid URL?");
@@ -238,7 +238,7 @@ cmd({
     
     await reply(`╭━═『 *VIDEO CORE* 』━╮\n┃ 📡 *Source:* Direct URL\n┃ ⏳ *Status:* Fetching MP4...\n╰━━━━━━━━━━━━━━╯`);
 
-    const apiUrl = `https://apis.davidcyril.name.ng/download/ytv3?url=${encodeURIComponent(q)}&format=mp4`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/download/ytvideo?apikey=gifted-api_p1r5icplshukpe2x&url=${encodeURIComponent(q)}`;
     const { data } = await axios.get(apiUrl);
 
     if (!data.success || !data.result) return reply("❌ *Extraction failed.* Invalid URL?");

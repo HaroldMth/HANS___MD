@@ -434,31 +434,134 @@ cmd({
 
 cmd({
   pattern: "summarize",
-  alias: ["tl;dr"],
+  alias: ["tl;dr", "chatsum", "sum"],
   react: "📄",
   category: "ai",
-  desc: "Summarize long text",
-  usage: ".summarize [text]",
+  desc: "Summarize text or group chat history (reply to a message)",
+  usage: ".summarize [text] OR reply to a message with .summarize",
   noPrefix: false,
-}, async (conn, mek, m, { q, reply }) => {
+}, async (conn, mek, m, { q, reply, from }) => {
   try {
-    if (!q) return reply("Usage: .summarize [long text]");
-    
     if (conn && mek) {
-      await conn.sendMessage(mek.key.remoteJid, { react: { text: "📖", key: mek.key } });
+      await conn.sendMessage(from, { react: { text: "⏳", key: mek.key } });
     }
 
-    const prompt = `Summarize the following text in 2-3 sentences:\n\n${q}`;
-    const response = await callPollinationsAI(prompt, MODELS.openai, "You are a master summarizer.", 500, 0.5);
+    // 1. Check if user is replying to a message to summarize chat history (or no text input provided in chat)
+    if (m.quoted || (!q && from)) {
+      const { getChatHistory } = require("../lib/database");
+      const limit = 50; // Fetch up to 50 messages for context
+      let chatHistory = getChatHistory(from, limit);
+      
+      // If replying to a specific message, limit history up to and including that message (if it exists in our cache)
+      if (m.quoted) {
+        const quotedId = m.quoted.id;
+        const quotedIndex = chatHistory.findIndex((msg) => msg.id === quotedId);
+        if (quotedIndex !== -1) {
+          chatHistory = chatHistory.slice(0, quotedIndex + 1);
+        }
+      }
 
-    const caption = `╭━═『 *SUMMARY* 』═━╮\n\n${response.trim()}\n\n╰━━━━━━━━━━━━━━━━━━╯\n\n*HANS MD — Condensed knowledge.* 📄`;
-    await reply(caption);
+      const userMessages = {};
 
-    if (conn && mek) {
-      await conn.sendMessage(mek.key.remoteJid, { react: { text: "✅", key: mek.key } });
+      // Populate quoted message if it exists and isn't already in history
+      if (m.quoted) {
+        const quotedSender = m.quoted.sender;
+        const quotedText = m.quoted.body;
+        const quotedId = m.quoted.id;
+        
+        const alreadyInHistory = chatHistory.some((msg) => msg.id === quotedId);
+        if (quotedText && quotedSender && !alreadyInHistory) {
+          const contact = conn.contacts?.[quotedSender] || {};
+          const name = contact.name || contact.notify || contact.verifiedName || m.quoted.pushName || quotedSender.split("@")[0];
+          userMessages[quotedSender] = {
+            name,
+            messages: [quotedText]
+          };
+        }
+      }
+
+      // Populate history messages
+      if (Array.isArray(chatHistory)) {
+        for (const msg of chatHistory) {
+          const text = (msg.body || msg.caption || "").trim();
+          const type = msg.type || "unknown";
+          if (!text || type === "audioMessage") continue;
+
+          let senderJid = msg.sender || from;
+          if (msg.fromMe) {
+            senderJid = conn.user?.id || senderJid;
+          }
+
+          if (!userMessages[senderJid]) {
+            const contact = conn.contacts?.[senderJid] || {};
+            const name = contact.name || contact.notify || contact.verifiedName || msg.pushName || senderJid.split("@")[0];
+            userMessages[senderJid] = {
+              name,
+              messages: []
+            };
+          }
+          userMessages[senderJid].messages.push(text);
+        }
+      }
+
+      // Build transcript
+      let transcript = "";
+      for (const [jid, data] of Object.entries(userMessages)) {
+        const phone = jid.split("@")[0].split(":")[0];
+        transcript += `User: ${data.name} (+${phone})\n`;
+        transcript += `Messages:\n`;
+        for (const text of data.messages) {
+          transcript += `- ${text}\n`;
+        }
+        transcript += `\n`;
+      }
+
+      if (!transcript.trim()) {
+        if (conn && mek) await conn.sendMessage(from, { react: { text: "❌", key: mek.key } });
+        return reply("❌ No text messages found in chat history to summarize (audio and empty media are excluded).");
+      }
+
+      const systemPrompt = "You are an AI assistant built to summarize conversations. Group the summary by user, showing each user's name/number, and describe their main points, ideas, and questions in a concise, bulleted format. Do not mention audio messages. Make the tone helpful and professional.";
+      const userPrompt = `Here is the chat transcript:\n\n${transcript}\n\nPlease summarize the conversation contributions of each user.`;
+
+      const response = await callPollinationsAI(userPrompt, MODELS.openai, systemPrompt, 1500, 0.7);
+      if (!response) {
+        if (conn && mek) await conn.sendMessage(from, { react: { text: "❌", key: mek.key } });
+        return reply("❌ Failed to generate chat summary.");
+      }
+
+      const caption = `╭━═『 *CONVERSATION SUMMARY* 』═━╮\n\n${response.trim()}\n\n╰━━━━━━━━━━━━━━━━━━╯\n\n*HANS MD — AI Summarizer* 📄`;
+      await reply(caption);
+      
+      if (conn && mek) await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
+
+    } else {
+      // 2. Summarize provided text (fallback)
+      if (!q) {
+        if (conn && mek) await conn.sendMessage(from, { react: { text: "❌", key: mek.key } });
+        return reply("Usage: Reply to a message with `.summarize` to summarize chat history, or type `.summarize [long text]` to summarize specific text.");
+      }
+
+      const prompt = `Summarize the following text in 2-3 sentences:\n\n${q}`;
+      const response = await callPollinationsAI(prompt, MODELS.openai, "You are a master summarizer.", 500, 0.5);
+
+      if (!response) {
+        if (conn && mek) await conn.sendMessage(from, { react: { text: "❌", key: mek.key } });
+        return reply("❌ Failed to summarize text.");
+      }
+
+      const caption = `╭━═『 *SUMMARY* 』═━╮\n\n${response.trim()}\n\n╰━━━━━━━━━━━━━━━━━━╯\n\n*HANS MD — Condensed knowledge.* 📄`;
+      await reply(caption);
+      
+      if (conn && mek) await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
     }
+
   } catch (err) {
-    console.error("SUMMARIZE ERROR:", err.message);
-    reply("❌ Failed to summarize.");
+    console.error("SUMMARIZE ERROR:", err);
+    if (conn && mek) {
+      await conn.sendMessage(from, { react: { text: "❌", key: mek.key } }).catch(() => {});
+    }
+    reply(`❌ Error: ${err.message}`);
   }
 });
+

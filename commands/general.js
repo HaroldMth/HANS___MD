@@ -180,7 +180,7 @@ function isLocked(cmdInfo, { isOwner, isSudo, isAdmin, isGroup }) {
 
   // owner category commands should be sudo/owner
   const category = String(cmdInfo?.category || "").toLowerCase();
-  if (category === "owner") return !isSudo;
+  if (category === "owner") return !(isOwner || isSudo);
 
   // group category commands should be group-only, admin-only (safe default)
   if (category === "group") {

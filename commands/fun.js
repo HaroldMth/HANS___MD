@@ -216,7 +216,7 @@ cmd({
   noPrefix: false,
 }, async (conn, mek, m, { from, reply }) => {
   try {
-    const url = "https://api.giftedtech.co.ke/api/fun/jokes?apikey=gifted";
+    const url = "https://api.giftedtech.co.ke/api/fun/jokes?apikey=gifted-api_p1r5icplshukpe2x";
     const { data } = await axios.get(url);
 
     if (!data.success || !data.result) return reply("❌ Failed to fetch joke.");
@@ -249,7 +249,7 @@ cmd({
   noPrefix: false,
 }, async (conn, mek, m, { from, reply }) => {
   try {
-    const url = "https://api.giftedtech.co.ke/api/fun/pickupline?apikey=gifted";
+    const url = "https://api.giftedtech.co.ke/api/fun/pickupline?apikey=gifted-api_p1r5icplshukpe2x";
     const { data } = await axios.get(url);
 
     if (!data.success || !data.result) return reply("❌ Failed to fetch pickup line.");
