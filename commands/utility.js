@@ -12,7 +12,7 @@ cmd(
   {
     pattern: "vv",
     alias: ["viewonce"],
-    react: "??",
+    react: "👀",
     desc: "Extract media from view-once messages",
     category: "utility",
     usage: ".vv (reply to view-once)",
@@ -20,9 +20,6 @@ cmd(
   },
   async (conn, mek, m, { from, reply, sender }) => {
     try {
-      // View-once is in the RAW mek, not in serialized quoted
-      // because your extractQuoted only looks at contextInfo.quotedMessage
-      // which for view-once contains the unwrapped media directly
       const ctx =
         mek?.message?.extendedTextMessage?.contextInfo ||
         mek?.message?.imageMessage?.contextInfo ||
@@ -31,7 +28,7 @@ cmd(
         null;
 
       if (!ctx?.quotedMessage) {
-        return reply("?? Please reply to a view-once message.");
+        return reply("❌ Please reply to a view-once message.");
       }
 
       const quotedMsg = ctx.quotedMessage;
@@ -41,62 +38,38 @@ cmd(
         quotedMsg?.viewOnceMessage?.message ||
         quotedMsg?.viewOnceMessageV2?.message ||
         quotedMsg?.viewOnceMessageV2Extension?.message ||
-        quotedMsg; // fallback: already unwrapped by WA
+        quotedMsg;
 
-      const hasImage = voInner?.imageMessage;
-      const hasVideo = voInner?.videoMessage;
-      const hasAudio = voInner?.audioMessage;
+      // Check viewOnce flag directly — don't process regular media
+      const hasImage = voInner?.imageMessage?.viewOnce ? voInner.imageMessage : null;
+      const hasVideo = voInner?.videoMessage?.viewOnce ? voInner.videoMessage : null;
+      const hasAudio = voInner?.audioMessage?.viewOnce ? voInner.audioMessage : null;
 
       if (!hasImage && !hasVideo && !hasAudio) {
-        return reply(
-          "?? No view-once media found. Make sure you are replying to a view-once image, video, or audio."
-        );
+        return reply("❌ No view-once media found. Make sure you are replying to a view-once image, video, or audio.");
       }
 
-      // Build a proper mek object for downloading
-      const quotedKey = {
-        remoteJid: mek?.key?.remoteJid,
-        fromMe: false,
-        id: ctx.stanzaId,
-        participant: ctx.participant,
-      };
-
-      // Patch viewOnce flag off so it downloads like normal media
+      // Patch viewOnce flag off before downloading
       if (hasImage) hasImage.viewOnce = false;
       if (hasVideo) hasVideo.viewOnce = false;
       if (hasAudio) hasAudio.viewOnce = false;
 
-      const quotedMek = {
-        key: quotedKey,
-        message: voInner,
-      };
+      const mediaInfo = hasImage || hasVideo || hasAudio;
+      const mediaType = hasImage ? "image" : hasVideo ? "video" : "audio";
 
-      // Download with fallback
       let buffer;
       try {
-        buffer = await downloadMediaMessage(
-          quotedMek,
-          "buffer",
-          {},
-          { reuploadRequest: conn.updateMediaMessage }
-        );
-      } catch {
-        // Fallback via stream
-        try {
-          const mediaInfo = hasImage || hasVideo || hasAudio;
-          const mediaType = hasImage ? "image" : hasVideo ? "video" : "audio";
-          const stream = await downloadContentFromMessage(mediaInfo, mediaType);
-          const chunks = [];
-          for await (const chunk of stream) chunks.push(chunk);
-          buffer = Buffer.concat(chunks);
-        } catch (err2) {
-          console.error("[VV FALLBACK ERROR]", err2);
-          return reply("?? Failed to download view-once media. It may have expired.");
-        }
+        const stream = await downloadContentFromMessage(mediaInfo, mediaType);
+        const chunks = [];
+        for await (const chunk of stream) chunks.push(chunk);
+        buffer = Buffer.concat(chunks);
+      } catch (err) {
+        console.error("[VV DOWNLOAD ERROR]", err);
+        return reply("❌ Failed to download view-once media. It may have expired.");
       }
 
       if (!buffer?.length) {
-        return reply("?? Downloaded buffer is empty.");
+        return reply("❌ Downloaded buffer is empty.");
       }
 
       const contextInfo = getContext({
@@ -107,33 +80,30 @@ cmd(
 
       // Send image
       if (hasImage) {
-        const caption = hasImage.caption || "";
         await conn.sendMessage(
           from,
           {
             image: buffer,
             mimetype: hasImage.mimetype || "image/jpeg",
-            caption,
+            caption: hasImage.caption || "",
             contextInfo,
           },
           { quoted: mek }
         );
       }
 
-      // Send video + extract audio
+      // Send video + audio track
       if (hasVideo) {
-        const caption = hasVideo.caption || "";
         await conn.sendMessage(
           from,
           {
             video: buffer,
             mimetype: hasVideo.mimetype || "video/mp4",
-            caption,
+            caption: hasVideo.caption || "",
             contextInfo,
           },
           { quoted: mek }
         );
-        // also send as audio
         await conn.sendMessage(
           from,
           {
@@ -148,13 +118,12 @@ cmd(
 
       // Send audio / voice note
       if (hasAudio) {
-        const isVoice = hasAudio.ptt === true;
         await conn.sendMessage(
           from,
           {
             audio: buffer,
             mimetype: hasAudio.mimetype || "audio/ogg; codecs=opus",
-            ptt: isVoice,
+            ptt: hasAudio.ptt === true,
             contextInfo,
           },
           { quoted: mek }
@@ -162,11 +131,11 @@ cmd(
       }
 
       await conn.sendMessage(from, {
-        react: { text: "??", key: mek.key },
+        react: { text: "✅", key: mek.key },
       });
     } catch (err) {
       console.error("[VV ERROR]", err);
-      return reply(`?? Error: ${err.message}`);
+      return reply(`❌ Error: ${err.message}`);
     }
   }
 );
@@ -175,7 +144,7 @@ cmd(
   {
     pattern: "vv2",
     alias: ["viewonce2"],
-    react: "??",
+    react: "👀",
     desc: "Extract media from view-once messages and send to owner DM",
     category: "utility",
     usage: ".vv2 (reply to view-once)",
@@ -190,9 +159,7 @@ cmd(
         mek?.message?.documentMessage?.contextInfo ||
         null;
 
-      if (!ctx?.quotedMessage) {
-        return;
-      }
+      if (!ctx?.quotedMessage) return;
 
       const quotedMsg = ctx.quotedMessage;
 
@@ -202,58 +169,33 @@ cmd(
         quotedMsg?.viewOnceMessageV2Extension?.message ||
         quotedMsg;
 
-      const hasImage = voInner?.imageMessage;
-      const hasVideo = voInner?.videoMessage;
-      const hasAudio = voInner?.audioMessage;
+      const hasImage = voInner?.imageMessage?.viewOnce ? voInner.imageMessage : null;
+      const hasVideo = voInner?.videoMessage?.viewOnce ? voInner.videoMessage : null;
+      const hasAudio = voInner?.audioMessage?.viewOnce ? voInner.audioMessage : null;
 
-      if (!hasImage && !hasVideo && !hasAudio) {
-        return;
-      }
-
-      const quotedKey = {
-        remoteJid: mek?.key?.remoteJid,
-        fromMe: false,
-        id: ctx.stanzaId,
-        participant: ctx.participant,
-      };
+      if (!hasImage && !hasVideo && !hasAudio) return;
 
       if (hasImage) hasImage.viewOnce = false;
       if (hasVideo) hasVideo.viewOnce = false;
       if (hasAudio) hasAudio.viewOnce = false;
 
-      const quotedMek = {
-        key: quotedKey,
-        message: voInner,
-      };
+      const mediaInfo = hasImage || hasVideo || hasAudio;
+      const mediaType = hasImage ? "image" : hasVideo ? "video" : "audio";
 
       let buffer;
       try {
-        buffer = await downloadMediaMessage(
-          quotedMek,
-          "buffer",
-          {},
-          { reuploadRequest: conn.updateMediaMessage }
-        );
-      } catch {
-        try {
-          const mediaInfo = hasImage || hasVideo || hasAudio;
-          const mediaType = hasImage ? "image" : hasVideo ? "video" : "audio";
-          const stream = await downloadContentFromMessage(mediaInfo, mediaType);
-          const chunks = [];
-          for await (const chunk of stream) chunks.push(chunk);
-          buffer = Buffer.concat(chunks);
-        } catch (err2) {
-          console.error("[VV2 FALLBACK ERROR]", err2);
-          return;
-        }
-      }
-
-      if (!buffer?.length) {
+        const stream = await downloadContentFromMessage(mediaInfo, mediaType);
+        const chunks = [];
+        for await (const chunk of stream) chunks.push(chunk);
+        buffer = Buffer.concat(chunks);
+      } catch (err) {
+        console.error("[VV2 DOWNLOAD ERROR]", err);
         return;
       }
 
-      const ownerNumber = config.OWNER_NUMBER[0];
-      const ownerJid = `${ownerNumber}@s.whatsapp.net`;
+      if (!buffer?.length) return;
+
+      const ownerJid = `${config.OWNER_NUMBER[0]}@s.whatsapp.net`;
 
       const contextInfo = getContext({
         mentionedJid: [sender],
@@ -261,24 +203,20 @@ cmd(
         isForwarded: true,
       });
 
-      // Send image to owner
       if (hasImage) {
-        const caption = hasImage.caption || `View-once image from ${sender}`;
         await conn.sendMessage(ownerJid, {
           image: buffer,
           mimetype: hasImage.mimetype || "image/jpeg",
-          caption,
+          caption: hasImage.caption || `👀 View-once image from ${sender}`,
           contextInfo,
         });
       }
 
-      // Send video + extract audio to owner
       if (hasVideo) {
-        const caption = hasVideo.caption || `View-once video from ${sender}`;
         await conn.sendMessage(ownerJid, {
           video: buffer,
           mimetype: hasVideo.mimetype || "video/mp4",
-          caption,
+          caption: hasVideo.caption || `👀 View-once video from ${sender}`,
           contextInfo,
         });
         await conn.sendMessage(ownerJid, {
@@ -289,19 +227,16 @@ cmd(
         });
       }
 
-      // Send audio to owner
       if (hasAudio) {
-        const isVoice = hasAudio.ptt === true;
         await conn.sendMessage(ownerJid, {
           audio: buffer,
           mimetype: hasAudio.mimetype || "audio/ogg; codecs=opus",
-          ptt: isVoice,
+          ptt: hasAudio.ptt === true,
           contextInfo,
         });
       }
     } catch (err) {
       console.error("[VV2 ERROR]", err);
-      return;
     }
   }
 );
