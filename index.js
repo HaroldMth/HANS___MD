@@ -377,11 +377,13 @@ async function startBot() {
 
       if (statusCode === DisconnectReason.loggedOut) {
         console.error("Logged out (401) - Check Browser Auth signature");
+        try { fs.rmSync(path.join(__dirname, SESSION_PATH), { recursive: true, force: true }); } catch {}
         process.exit(1);
       }
 
       if (statusCode === DisconnectReason.badSession) {
         console.error("Bad session, clear sessions/ and re-pair");
+        try { fs.rmSync(path.join(__dirname, SESSION_PATH), { recursive: true, force: true }); } catch {}
         process.exit(1);
       }
 
