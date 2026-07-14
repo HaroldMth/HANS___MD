@@ -1,42 +1,96 @@
 {
-  "name": "HANS-MD Quantum",
-  "description": "The elite, identity-driven WhatsApp Multi-Device bot.",
+  "name": "HANS-MD",
+  "description": "HANS MD — A feature-rich, identity-driven WhatsApp Multi-Device bot built on Baileys.",
   "repository": "https://github.com/HaroldMth/HANS___MD",
   "logo": "https://i.ibb.co/DPFmfvcX/Chat-GPT-Image-Apr-24-2026-01-51-32-AM.png",
-  "keywords": ["whatsapp", "bot", "baileys", "multidevice"],
+  "keywords": ["whatsapp", "bot", "baileys", "multidevice", "md"],
   "env": {
-    "OWNER_NUMBER": {
-      "description": "Your phone number with country code (e.g. 237680260772)",
-      "required": true
+
+    "SESSION_ID": {
+      "description": "Pre-linked session ID from the cloud vault (e.g. HANS-BYTE~xxxx). Use this OR OWNER_NUMBER.",
+      "required": false
     },
+    "OWNER_NUMBER": {
+      "description": "Your WhatsApp phone number with country code (e.g. 237680260772). Use this OR SESSION_ID.",
+      "required": false
+    },
+
     "BOT_NAME": {
-      "description": "The name of your bot",
+      "description": "Display name of your bot shown in menus and messages.",
       "value": "HANS MD",
       "required": false
     },
     "OWNER_NAME": {
-      "description": "Your display name",
+      "description": "Your display name shown in bot info.",
       "value": "Harold",
       "required": false
     },
     "PREFIX": {
-      "description": "Command prefix (e.g. . or !)",
+      "description": "Command prefix character(s). Separate multiple with commas e.g. '.,!'",
       "value": ".",
       "required": false
     },
-    "TG_BOT_TOKEN": {
-      "description": "Telegram bot token for error reporting (Optional)",
+
+    "AUTO_REACT": {
+      "description": "Automatically react with an emoji to every incoming message (true/false).",
+      "value": "false",
       "required": false
     },
-    "TG_CHAT_ID": {
-      "description": "Telegram chat ID for error reporting (Optional)",
+    "ANTI_DELETE": {
+      "description": "Log deleted messages and resend them to the owner (true/false).",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_READ": {
+      "description": "Automatically mark all incoming messages as read (true/false).",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_STATUS": {
+      "description": "Automatically view all status updates (true/false).",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_STATUS_LIKE": {
+      "description": "Automatically react with a random emoji to status updates (true/false).",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_TYPING": {
+      "description": "Show typing indicator when processing commands (true/false).",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_RECORDING": {
+      "description": "Show audio recording indicator when processing commands (true/false).",
+      "value": "false",
       "required": false
     },
     "ALWAYS_ONLINE": {
-      "description": "Keep bot always online (true/false)",
-      "value": "true",
+      "description": "Keep the bot's WhatsApp presence always shown as Online (true/false).",
+      "value": "false",
+      "required": false
+    },
+
+    "ENCRYPTION_KEY": {
+      "description": "Custom AES-256 key for encrypting the anti-delete messages database at rest. Auto-generated if omitted.",
+      "required": false
+    },
+    "GIFTED_API_KEY": {
+      "description": "API key for Gifted Baileys extended media features.",
+      "value": "gifted",
+      "required": false
+    },
+
+    "TG_BOT_TOKEN": {
+      "description": "Telegram Bot Token for forwarding fatal crash reports to Telegram (Optional).",
+      "required": false
+    },
+    "TG_CHAT_ID": {
+      "description": "Telegram Chat ID to receive crash reports (Optional, used with TG_BOT_TOKEN).",
       "required": false
     }
+
   },
   "formation": {
     "worker": {

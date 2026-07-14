@@ -97,6 +97,156 @@ const CREDS_PATH = path.join(__dirname, "sessions", "creds.json");
 let isFirstConnect = true;
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
 
+async function runInteractiveSetup() {
+  const envPath = path.join(__dirname, ".env");
+  if (fs.existsSync(envPath)) return;
+
+  const readline = require("readline");
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const question = (text) => new Promise((resolve) => rl.question(text, resolve));
+
+  console.log("\n🚀 Welcome to HANS MD Onboarding Setup Wizard! 🚀\n");
+  console.log("No .env file found. Let's configure your bot variables now.\n");
+
+  try {
+    const botName = (await question("📝 Enter Bot Name (default: HANS MD): ")).trim() || "HANS MD";
+    const ownerName = (await question("👤 Enter Owner Name (default: Harold): ")).trim() || "Harold";
+
+    console.log("\nSelect your authentication method:");
+    console.log("1. Cloud Session ID (pre-linked)");
+    console.log("2. Pairing Code (direct via terminal)");
+    const authChoice = (await question("🔢 Choice (1 or 2, default: 2): ")).trim() || "2";
+
+    let sessionId = "";
+    let ownerNumber = "";
+
+    if (authChoice === "1") {
+      sessionId = (await question("🔑 Enter your Session ID (e.g. HANS-BYTE~6a564eb...): ")).trim();
+      if (!sessionId) {
+        console.log("⚠️ No Session ID entered. Falling back to Pairing Code mode.");
+      }
+    }
+
+    if (!sessionId) {
+      ownerNumber = (await question("📲 Enter owner phone number with country code (e.g. 237680260772): ")).trim().replace(/\D/g, "");
+      while (!ownerNumber || ownerNumber.length < 10) {
+        console.log("❌ Invalid phone number. It must include country code and be at least 10 digits.");
+        ownerNumber = (await question("📲 Enter owner phone number with country code: ")).trim().replace(/\D/g, "");
+      }
+    }
+
+    const autoReact = (await question("🎭 Enable Auto-React (true/false, default: false): ")).trim().toLowerCase() === "true";
+    const antiDelete = (await question("🗑️ Enable Anti-Delete (true/false, default: true): ")).trim().toLowerCase() !== "false";
+
+    const crypto = require("crypto");
+    const encryptionKey = crypto.randomBytes(32).toString("hex");
+
+    const envContent = `# HANS MD Configuration
+BOT_NAME="${botName}"
+OWNER_NAME="${ownerName}"
+OWNER_NUMBER="${ownerNumber}"
+SESSION_ID="${sessionId}"
+AUTO_REACT="${autoReact}"
+ANTI_DELETE="${antiDelete}"
+ENCRYPTION_KEY="${encryptionKey}"
+`;
+
+    fs.writeFileSync(envPath, envContent, "utf8");
+    console.log("\n✅ .env file created successfully!");
+  } catch (err) {
+    console.error("❌ Onboarding wizard failed:", err.message);
+  } finally {
+    rl.close();
+  }
+
+  require("dotenv").config({ override: true });
+  delete require.cache[require.resolve("./config")];
+  const newConfig = require("./config");
+  Object.assign(config, newConfig);
+}
+
+async function fetchSessionFromCloud() {
+  const sessionPath = path.join(__dirname, "sessions");
+  const credsPath = path.join(sessionPath, "creds.json");
+
+  if (fs.existsSync(credsPath) && fs.statSync(credsPath).size > 0) {
+    return;
+  }
+
+  if (!config.SESSION_ID) return;
+
+  console.log("📡 Connecting to cloud vault to restore session...");
+  try {
+    const fullId = encodeURIComponent(config.SESSION_ID.trim());
+    const route = `${config.PAIRING_SERVER_URL.replace(/\/$/, "")}/session/${fullId}`;
+    
+    console.log(`🔍 Querying cloud session: ${config.SESSION_ID.substring(0, 18)}...`);
+    
+    const response = await axios.get(route, { 
+      timeout: 60000,
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!response.data) throw new Error("Server returned empty response.");
+    
+    if (typeof response.data === 'string' && (response.data.includes('<!DOCTYPE') || response.data.includes('<html'))) {
+       throw new Error("Cloud returned HTML landing page instead of session JSON.");
+    }
+
+    if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
+
+    const sessionObj = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+    
+    if (!sessionObj.noiseKey && !sessionObj.creds) {
+       throw new Error("Retrieved data is not a valid WhatsApp session (missing noiseKey).");
+    }
+
+    const finalCreds = sessionObj.creds || sessionObj;
+
+    fs.writeFileSync(credsPath, JSON.stringify(finalCreds, null, 2));
+    console.log("✅ Cloud synchronization complete! Session restored successfully.");
+
+    if (!config.OWNER_NUMBER || config.OWNER_NUMBER.length === 0 || !config.OWNER_NUMBER[0]) {
+      const meId = finalCreds.me?.id;
+      if (meId) {
+        const extracted = meId.split(":")[0].split("@")[0];
+        config.OWNER_NUMBER = [extracted];
+        console.log(`👤 Extracted OWNER_NUMBER from session: ${extracted}`);
+      }
+    }
+  } catch (err) {
+    const status = err.response ? `[Status: ${err.response.status}]` : "";
+    console.warn(`⚠️ Cloud fetch failed ${status}: ${err.message}`);
+  }
+}
+
+function cleanTempFiles() {
+  const tempDir = require("os").tmpdir();
+  try {
+    const files = fs.readdirSync(tempDir);
+    const now = Date.now();
+    let count = 0;
+    
+    for (const file of files) {
+      if (file.startsWith("hans_") || file.startsWith("up_")) {
+        const filePath = path.join(tempDir, file);
+        try {
+          const stats = fs.statSync(filePath);
+          if (now - stats.mtimeMs > 30 * 60 * 1000) {
+            fs.unlinkSync(filePath);
+            count++;
+          }
+        } catch {}
+      }
+    }
+    if (count > 0) {
+      console.log(`🧹 Cleaned up ${count} stale temporary media files from /tmp`);
+    }
+  } catch (err) {
+    console.error("[CLEANUP] Failed to clean temp directory:", err.message);
+  }
+}
+
 // ─── START BOT ───
 async function startBot() {
 
@@ -644,6 +794,14 @@ _We'll miss you, @${targetNum}!_`;
   return conn;
 }
 
-// ─── START BOT ───
-startBot();
+// ─── INIT APPLICATION ───
+async function initApp() {
+  await runInteractiveSetup();
+  await fetchSessionFromCloud();
+  cleanTempFiles();
+  setInterval(cleanTempFiles, 60 * 60 * 1000);
+  startBot();
+}
+
+initApp();
 

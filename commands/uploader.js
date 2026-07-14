@@ -19,12 +19,16 @@ async function apiUpload(buffer, mimetype, provider, extra = {}) {
     form.append(key, extra[key]);
   }
 
-  const { data } = await axios.post(`https://apis.davidcyril.name.ng/uploader/${provider}`, form, {
-    headers: form.getHeaders(),
-  });
-
-  if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-  return data;
+  try {
+    const { data } = await axios.post(`https://apis.davidcyril.name.ng/uploader/${provider}`, form, {
+      headers: form.getHeaders(),
+    });
+    return data;
+  } finally {
+    try {
+      if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    } catch {}
+  }
 }
 
 // --- UPLOADER SUITE ---

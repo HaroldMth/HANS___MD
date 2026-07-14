@@ -405,12 +405,17 @@ cmd(
       form.append("reqtype", "fileupload");
       form.append("fileToUpload", fs.createReadStream(tempPath));
 
-      const { data: uploadUrl } = await axios.post("https://catbox.moe/user/api.php", form, {
-        headers: form.getHeaders(),
-      });
-
-      // Cleanup
-      if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+      let uploadUrl;
+      try {
+        const response = await axios.post("https://catbox.moe/user/api.php", form, {
+          headers: form.getHeaders(),
+        });
+        uploadUrl = response.data;
+      } finally {
+        try {
+          if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+        } catch {}
+      }
 
       if (typeof uploadUrl !== "string" || !uploadUrl.includes("http")) {
         return reply("❌ *System Error:* Galactic link failed to generate.");
