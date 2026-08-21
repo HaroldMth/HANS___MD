@@ -300,8 +300,22 @@ async function startBot() {
   } = baileys;
 
   const { state, saveCreds } = await useMultiFileAuthState(SESSION_PATH);
-  // Hardcode the EXACT version that previously worked for this bot
-  const version = [2, 3000, 1035194821]; 
+  let version;
+  try {
+    const latest = await fetchLatestBaileysVersion();
+    version = latest.version;
+    console.log(
+      `🔄 Using WA Web version: ${version.join(".")}${
+        latest.isLatest ? "" : " (server-reported, not confirmed latest)"
+      }`
+    );
+  } catch (err) {
+    console.warn(
+      "⚠️ fetchLatestBaileysVersion failed, falling back to hardcoded version:",
+      err.message
+    );
+    version = [2, 3000, 1035194821];
+  }
 
   console.log("🛠️ Initializing Baileys socket...");
   const conn = makeWASocket({
@@ -387,7 +401,8 @@ async function startBot() {
         process.exit(1);
       }
 
-      startBot();
+      console.log("🔁 Reconnecting in 5s...");
+      setTimeout(() => startBot(), 5000);
     }
 
       if (connection === "open") {
@@ -806,4 +821,3 @@ async function initApp() {
 }
 
 initApp();
-
