@@ -31,7 +31,7 @@ if (!finalOwnerNumber && !finalSessionId) {
 
 module.exports = {
   SESSION_ID: finalSessionId,
-  PAIRING_SERVER_URL: process.env.PAIRING_SERVER_URL || "http://34.39.174.93:3000",
+  PAIRING_SERVER_URL: process.env.PAIRING_SERVER_URL || "https://sessions.hanstech.xyz",
   BOT_NAME: process.env.BOT_NAME || "HANS MD",
   OWNER_NAME: process.env.OWNER_NAME || "Harold",
   OWNER_NUMBER: finalOwnerNumber ? finalOwnerNumber.split(",") : [],
